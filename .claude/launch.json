@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "leticia-local",
+      "runtimeExecutable": "php",
+      "runtimeArgs": ["-S", "localhost:8765", "local/servidor.php"],
+      "port": 8765
+    }
+  ]
+}

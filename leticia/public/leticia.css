@@ -1,0 +1,888 @@
+/* =========================================================================
+   LetícIA — a tela do briefing
+
+   TODA REGRA COMEÇA COM .leticia-raiz. Há um caso de teste cobrando isso, e
+   não é estilo de escrita: sem o prefixo a regra vale 0-1-0 de especificidade
+   e perde para qualquer `.classe-do-tema button`. Foi assim que o kit do
+   Elementor transformou um botão de fechar num retângulo azul de 72x40 no
+   projeto vizinho. Regra nova nasce com o prefixo.
+
+   Nada de `!important` nosso, com duas exceções e só duas — `[hidden]` e o
+   bloco de movimento reduzido. Nos dois ele é o mecanismo, não remendo; em
+   qualquer outro lugar, se precisou, a regra está mal escrita ou o prefixo
+   faltou. Há casos de teste cobrando as três coisas.
+
+   A barra do topo é `sticky`, nunca `fixed`. Um único ancestral com
+   `transform` — e temas fazem isso o tempo todo em animação de entrada — faz
+   `position: fixed` passar a se medir por ele em vez de pela janela.
+
+   Nada necessário depende de `background-image`: a regra de carregamento
+   preguiçoso do Elementor apaga essa propriedade com `!important` em todo
+   descendente. O halo atrás da pergunta é gradiente, mas mora num
+   pseudo-elemento — que o `*` daquela regra não alcança — e é decorativo: se
+   um dia sumir, a tela continua inteira.
+   ========================================================================= */
+
+/* ---- tokens ------------------------------------------------------------- */
+.leticia-raiz {
+  --lt-fundo:        #FBFBFC;
+  --lt-superficie:   #FFFFFF;
+  --lt-borda:        #E7E8EC;
+  --lt-borda-forte:  #D6D8DE;
+  --lt-texto:        #16181D;
+  --lt-texto-suave:  #6B7280;
+  --lt-acento:       #1F5EFF;
+  --lt-acento-fraco: color-mix(in srgb, var(--lt-acento) 8%, transparent);
+  --lt-brilho:       color-mix(in srgb, var(--lt-acento) 13%, transparent);
+  --lt-foco:         color-mix(in srgb, var(--lt-acento) 40%, transparent);
+  --lt-acento-forte: color-mix(in srgb, var(--lt-acento) 86%, #000);
+  --lt-sucesso:      #0E9F6E;
+  --lt-atencao:      #B45309;
+  --lt-atencao-fraco: rgba(180, 83, 9, .07);
+  --lt-gravando:     #E5484D;
+  /* As três cores do símbolo da JoinVix. Fixas: são da marca, não do tema. */
+  --lt-jv-claro:     #7DC9E3;
+  --lt-jv-medio:     #3AB4E9;
+  --lt-jv-escuro:    #3159A3;
+
+  --lt-e1: 4px;  --lt-e2: 8px;  --lt-e3: 12px; --lt-e4: 16px;
+  --lt-e5: 24px; --lt-e6: 32px; --lt-e7: 48px; --lt-e8: 64px;
+
+  --lt-sombra: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+  --lt-pilula: 0 1px 2px rgba(16,24,40,.05), 0 6px 20px rgba(16,24,40,.07);
+
+  --lt-micro: 120ms; --lt-padrao: 220ms; --lt-entrada: 320ms; --lt-progresso: 420ms;
+  --lt-desacelera: cubic-bezier(.2,0,0,1);
+  --lt-acelera:    cubic-bezier(.4,0,1,1);
+  --lt-entre:      cubic-bezier(.4,0,.2,1);
+
+  --lt-coluna: 640px;
+
+  color-scheme: light;
+  font-family: Inter, "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--lt-texto);
+  background: var(--lt-fundo);
+  -webkit-font-smoothing: antialiased;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sem color-mix o acento some: navegador antigo cai nestes valores fixos. */
+@supports not (color: color-mix(in srgb, red 50%, transparent)) {
+  .leticia-raiz {
+    --lt-acento-fraco: rgba(31, 94, 255, .08);
+    --lt-brilho:       rgba(31, 94, 255, .13);
+    --lt-foco:         rgba(31, 94, 255, .4);
+    --lt-acento-forte: var(--lt-acento);
+  }
+}
+
+/* modo pagina: sangra até a largura da janela e ocupa a altura toda */
+/* --lt-largura vem do JS: é a janela sem a barra de rolagem. 100vw conta a
+   barra, e numa página que rola isso vira rolagem horizontal. Sem JS, 100vw. */
+.leticia-raiz[data-modo="pagina"] {
+  min-height: 100dvh;
+  min-height: var(--lt-altura, 100dvh);
+  width: var(--lt-largura, 100vw);
+  max-width: var(--lt-largura, 100vw);
+  margin-left: calc(50% - var(--lt-largura, 100vw) / 2);
+  margin-right: calc(50% - var(--lt-largura, 100vw) / 2);
+}
+
+/* modo bloco: respeita a coluna em que foi colocado */
+.leticia-raiz[data-modo="bloco"] {
+  width: 100%;
+  min-height: 60vh;
+  border: 1px solid var(--lt-borda);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+/* ---- reset de território ------------------------------------------------ */
+/* devolve o que o tema impõe nos elementos que o componente usa */
+.leticia-raiz *,
+.leticia-raiz *::before,
+.leticia-raiz *::after { box-sizing: border-box; }
+
+.leticia-raiz button,
+.leticia-raiz input,
+.leticia-raiz textarea,
+.leticia-raiz select {
+  font: inherit; color: inherit; letter-spacing: inherit;
+  margin: 0; padding: 0;
+  border: 0; border-radius: 0;
+  background: none; box-shadow: none;
+  text-transform: none; text-align: left;
+  line-height: inherit; min-height: 0; width: auto;
+  -webkit-appearance: none; appearance: none;
+  /* Tema costuma pôr `transition: all .3s` em botão e campo. No textarea isso
+     anima a altura enquanto o JS mede para crescer, e o campo fica espremido
+     com o texto cortado. Os componentes declaram a transição que querem. */
+  transition: none;
+}
+.leticia-raiz button { cursor: pointer; }
+.leticia-raiz button[disabled] { cursor: default; }
+
+/* Os estados do botão, numa regra só, que o tema não vence.
+
+   Tema pinta botão no hover e no foco: o Hello Elementor tem
+   `[type=button]:hover { background-color: #c36; color: #fff }`, que vale
+   0-2-0 e passava por cima de todo hover nosso que não declarasse fundo E cor
+   — daí botão vermelho, ou texto branco sobre fundo claro. E como o foco fica
+   depois do clique, o botão continuava vermelho.
+
+   A saída: nenhum botão pinta fundo, cor, borda ou sombra direto. Cada um
+   declara variáveis (--lt-b-*), e só esta regra as aplica — com a classe
+   repetida para valer 0-2-1 parado e 0-3-1 em hover, foco e clique. Tema não
+   define --lt-b-*, então não tem como disputar o valor. Há caso de teste
+   cobrando que nenhum componente de botão volte a pintar direto. */
+.leticia-raiz.leticia-raiz button,
+.leticia-raiz.leticia-raiz button:hover,
+.leticia-raiz.leticia-raiz button:focus,
+.leticia-raiz.leticia-raiz button:active {
+  background: var(--lt-b-fundo, transparent);
+  color: var(--lt-b-cor, inherit);
+  border-color: var(--lt-b-borda, transparent);
+  box-shadow: var(--lt-b-sombra, none);
+  text-decoration: none;
+}
+.leticia-raiz a,
+.leticia-raiz a:hover,
+.leticia-raiz a:focus { color: var(--lt-acento); }
+.leticia-raiz label { display: inline; margin: 0; font-weight: inherit; font-size: inherit; color: inherit; }
+.leticia-raiz p { margin: 0; padding: 0; font-size: inherit; line-height: inherit; color: inherit; }
+.leticia-raiz ul, .leticia-raiz ol, .leticia-raiz li { margin: 0; padding: 0; list-style: none; }
+.leticia-raiz h1, .leticia-raiz h2 { margin: 0; font-size: inherit; font-weight: 500; line-height: inherit; color: inherit; }
+.leticia-raiz a { color: var(--lt-acento); text-decoration: underline; box-shadow: none; }
+.leticia-raiz svg { display: block; }
+.leticia-raiz img { max-width: 100%; height: auto; }
+/* A primeira das duas exceções ao "nenhum !important": sem ele, qualquer
+   componente que declare display (o histórico declara flex) vence o [hidden]
+   por ordem de fonte, e o que devia estar escondido aparece. */
+.leticia-raiz [hidden] { display: none !important; }
+
+.leticia-raiz :focus { outline: none; }
+/* Foco de teclado visível, mas como halo — o contorno azul cheio de 2px
+   parecia erro de validação em volta de cada botão. */
+.leticia-raiz :focus-visible {
+  outline: 2px solid var(--lt-foco);
+  outline-offset: 2px;
+}
+
+/* ---- cabeçalho e progresso ---------------------------------------------- */
+.leticia-raiz .lt-topo {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--lt-fundo);
+  border-bottom: 1px solid var(--lt-borda);
+  padding: var(--lt-e3) var(--lt-e5) 0;
+  padding-top: max(var(--lt-e3), env(safe-area-inset-top));
+}
+.leticia-raiz .lt-topo-interno {
+  width: 100%; max-width: var(--lt-coluna); margin: 0 auto;
+  padding-bottom: var(--lt-e3);
+}
+.leticia-raiz .lt-topo-linha {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--lt-e3); margin-bottom: var(--lt-e2);
+}
+.leticia-raiz .lt-marca { font-size: 13px; font-weight: 600; letter-spacing: .01em; }
+.leticia-raiz .lt-simbolo { display: inline-block; width: 14px; height: 14px; margin-right: 6px; vertical-align: -2px; }
+.leticia-raiz .lt-simbolo-claro { fill: var(--lt-jv-claro); }
+.leticia-raiz .lt-simbolo-medio { fill: var(--lt-jv-medio); }
+.leticia-raiz .lt-simbolo-escuro { fill: var(--lt-jv-escuro); }
+.leticia-raiz .lt-marca span { font-weight: 400; color: var(--lt-texto-suave); }
+.leticia-raiz .lt-contagem { font-size: 13px; color: var(--lt-texto-suave); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* No celular, o cabeçalho fica numa linha: o tempo que falta importa mais
+   que o subtítulo — a JoinVix continua no rodapé e na apresentação. */
+@media (max-width: 480px) {
+  .leticia-raiz .lt-marca span { display: none; }
+}
+
+.leticia-raiz .lt-barra { display: flex; gap: var(--lt-e1); }
+.leticia-raiz .lt-segmento {
+  height: 4px; border-radius: 999px; background: var(--lt-borda);
+  overflow: hidden;
+  transition: background var(--lt-entrada) var(--lt-entre);
+}
+.leticia-raiz .lt-segmento--feito { background: var(--lt-borda-forte); }
+.leticia-raiz .lt-segmento i {
+  display: block; height: 100%; width: 0%;
+  background: var(--lt-acento); border-radius: 999px;
+  transition: width var(--lt-progresso) var(--lt-entre);
+}
+
+/* ---- corpo --------------------------------------------------------------- */
+/* Na conversa a pergunta ocupa o centro; na revisão a coluna corre de cima
+   para baixo, porque centralizar uma lista de quinze itens é pior de ler. */
+.leticia-raiz .lt-corpo {
+  position: relative;
+  flex: 1 1 auto;
+  padding: var(--lt-e5) var(--lt-e5) var(--lt-e4);
+  display: flex; flex-direction: column;
+  /* Nos dois eixos: o halo atrás da pergunta é um pseudo-elemento absoluto, e
+     vazando para baixo ele criava a "leve rolagem" numa tela que cabia. */
+  overflow: clip;
+}
+.leticia-raiz[data-fase="conversa"] .lt-corpo,
+.leticia-raiz[data-fase="anexo"] .lt-corpo,
+.leticia-raiz[data-fase="anexo-fim"] .lt-corpo,
+.leticia-raiz[data-fase="fim"] .lt-corpo { justify-content: center; }
+.leticia-raiz[data-fase="conversa"] .lt-corpo::before,
+.leticia-raiz[data-fase="anexo"] .lt-corpo::before {
+  content: ""; position: absolute; z-index: 0; pointer-events: none;
+  left: 50%; top: 54%; transform: translate(-50%, -50%);
+  width: min(1180px, 150%); height: min(560px, 70vh);
+  background: radial-gradient(closest-side, var(--lt-brilho), transparent 78%);
+}
+.leticia-raiz .lt-coluna {
+  position: relative; z-index: 1;
+  width: 100%; max-width: var(--lt-coluna); margin: 0 auto;
+  flex: 0 0 auto; display: flex; flex-direction: column;
+}
+.leticia-raiz[data-fase="revisao"] .lt-coluna { flex: 1 1 auto; }
+
+/* O pé da tela: aviso de IA e assinatura, presos embaixo. O corpo, que tem
+   flex 1, fica com o resto da altura e centraliza a conversa nele. */
+.leticia-raiz .lt-pe {
+  position: relative; z-index: 1; flex: 0 0 auto;
+  display: flex; flex-direction: column; align-items: center; gap: var(--lt-e2);
+  padding: var(--lt-e3) var(--lt-e5);
+  padding-bottom: max(var(--lt-e4), env(safe-area-inset-bottom));
+}
+
+/* O aviso de IA: presente, mas no tom de rodapé — não compete com a pergunta. */
+.leticia-raiz .lt-aviso-ia {
+  margin: 0 auto; max-width: 56ch;
+  font-size: 12px; line-height: 1.5; text-align: center;
+  color: var(--lt-texto-suave);
+}
+.leticia-raiz .lt-aviso-ia[hidden] { display: none; }
+/* Recolhido: uma linha só, que abre o texto inteiro. */
+.leticia-raiz .lt-aviso-ia summary {
+  display: inline-flex; align-items: center; gap: 4px;
+  list-style: none; cursor: pointer; border-radius: 6px;
+}
+.leticia-raiz .lt-aviso-ia summary::-webkit-details-marker { display: none; }
+.leticia-raiz .lt-aviso-ia summary::after {
+  content: "›"; display: inline-block; font-size: 14px; line-height: 1;
+  transition: transform var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-aviso-ia[open] summary::after { transform: rotate(90deg); }
+.leticia-raiz .lt-aviso-ia summary:hover { color: var(--lt-texto); }
+.leticia-raiz .lt-aviso-ia summary:focus-visible { outline: 2px solid var(--lt-foco); outline-offset: 2px; }
+.leticia-raiz .lt-aviso-ia p { margin: var(--lt-e2) 0 0; }
+
+/* A apresentação: a primeira tela, antes da primeira pergunta. Centrada
+   como as perguntas, para a troca de uma para a outra não pular. */
+.leticia-raiz[data-fase="apresentacao"] .lt-corpo { justify-content: center; }
+.leticia-raiz .lt-apresentacao {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: var(--lt-e4); max-width: 46ch; margin: 0 auto;
+}
+.leticia-raiz .lt-apresentacao .lt-simbolo { width: 44px; height: 44px; margin: 0 0 var(--lt-e1); }
+.leticia-raiz .lt-apresentacao .lt-fala { color: var(--lt-texto-suave); }
+.leticia-raiz .lt-apresentacao .lt-btn-primario { margin-top: var(--lt-e2); }
+.leticia-raiz .lt-apresentacao-ia {
+  margin-top: var(--lt-e4); padding-top: var(--lt-e4);
+  border-top: 1px solid var(--lt-borda);
+  font-size: 12px; line-height: 1.5; color: var(--lt-texto-suave);
+}
+
+/* A assinatura da JoinVix, no pé da coluna. */
+.leticia-raiz .lt-rodape { margin: 0; text-align: center; }
+.leticia-raiz .lt-rodape a {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; line-height: 1.4; color: var(--lt-texto-suave); text-decoration: none;
+}
+.leticia-raiz .lt-rodape a:hover b,
+.leticia-raiz .lt-rodape a:focus-visible b { text-decoration: underline; }
+.leticia-raiz .lt-rodape .lt-simbolo { margin-right: 0; vertical-align: 0; }
+.leticia-raiz .lt-rodape b { font-weight: 600; color: var(--lt-texto); }
+.leticia-raiz .lt-rodape span::before { content: "·"; margin-right: 6px; }
+
+/* ---- histórico ----------------------------------------------------------- */
+/* Fora da composição até alguém pedir: o cliente precisa poder olhar para
+   trás, mas não deve ter que olhar. */
+.leticia-raiz .lt-abrir-historico {
+  align-self: flex-start;
+  font-size: 13px; --lt-b-cor: var(--lt-texto-suave);
+  min-height: 32px; padding: 0 var(--lt-e2) 0 0;
+  border-radius: 999px;
+  transition: color var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-abrir-historico:hover { --lt-b-cor: var(--lt-texto); }
+/* O botão fica no alto do corpo, fora da coluna, e a lista abre por cima
+   do conteúdo: nada do que está na tela anda quando alguém olha para trás.
+   O corpo reserva o espaço do botão sempre, apareça ele ou não, para a
+   primeira resposta não fazer a pergunta pular. */
+/* Só na conversa: é onde os dois botões moram. Na apresentação, na revisão
+   e no fim, o espaço reservado virava uma faixa vazia no topo. */
+.leticia-raiz[data-fase="conversa"] .lt-corpo { padding-top: calc(var(--lt-e3) + 32px + var(--lt-e2)); }
+.leticia-raiz .lt-historico-ancora {
+  position: absolute; z-index: 5; top: var(--lt-e3); left: 50%;
+  width: min(var(--lt-coluna), calc(100% - 2 * var(--lt-e5)));
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: flex-start;
+  pointer-events: none;
+}
+.leticia-raiz .lt-historico-ancora > * { pointer-events: auto; }
+/* Histórico à esquerda, "Continuar depois" à direita, na mesma linha. */
+.leticia-raiz .lt-historico-ancora > .lt-ancora-linha {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--lt-e3);
+  pointer-events: none;
+}
+.leticia-raiz .lt-ancora-linha > button { pointer-events: auto; }
+.leticia-raiz .lt-abrir-continuar {
+  margin-left: auto;
+  font-size: 13px; font-weight: 500; --lt-b-cor: var(--lt-acento);
+  min-height: 32px; padding: 0 0 0 var(--lt-e2);
+  border-radius: 999px;
+  transition: color var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-abrir-continuar:hover { --lt-b-cor: var(--lt-acento-forte); }
+
+/* O cartão do "Continuar depois": abre por cima, como o histórico. */
+.leticia-raiz .lt-continuar {
+  position: absolute; top: calc(100% + var(--lt-e1)); right: 0;
+  width: min(380px, 100%);
+  display: flex; flex-direction: column; gap: var(--lt-e3);
+  padding: var(--lt-e4);
+  background: var(--lt-superficie); border: 1px solid var(--lt-borda);
+  border-radius: 16px; box-shadow: var(--lt-pilula);
+  transform-origin: top right;
+}
+.leticia-raiz .lt-continuar[hidden] { display: none; }
+.leticia-raiz .lt-continuar-titulo { margin: 0; font-size: 15px; font-weight: 600; }
+.leticia-raiz .lt-continuar .lt-ajuda { margin: 0; max-width: none; }
+.leticia-raiz .lt-continuar .lt-link-anexo-linha { margin-top: 0; }
+.leticia-raiz .lt-continuar-acoes { display: flex; flex-direction: column; gap: var(--lt-e2); }
+.leticia-raiz .lt-continuar-acoes .lt-btn { width: 100%; justify-content: center; border-width: 1px; border-style: solid; --lt-b-borda: var(--lt-borda); }
+.leticia-raiz .lt-continuar-status { margin: 0; font-size: 13px; color: var(--lt-texto-suave); }
+.leticia-raiz .lt-continuar-status--bom { color: var(--lt-sucesso); }
+.leticia-raiz .lt-historico {
+  position: absolute; top: calc(100% + var(--lt-e1)); left: 0; right: 0;
+  display: flex; flex-direction: column;
+  max-height: min(60vh, 440px); overflow-y: auto; overscroll-behavior: contain;
+  padding: var(--lt-e2) var(--lt-e4);
+  background: var(--lt-superficie); border: 1px solid var(--lt-borda);
+  border-radius: 16px; box-shadow: var(--lt-pilula);
+}
+.leticia-raiz .lt-historico[hidden] { display: none; }
+/* Abre descendo a partir do botão; fecha recolhendo, mais rápido. */
+.leticia-raiz .lt-historico { transform-origin: top center; }
+.leticia-raiz .lt-historico--abre { animation: lt-desdobra var(--lt-padrao) var(--lt-desacelera) both; }
+.leticia-raiz .lt-historico--fecha { animation: lt-recolhe 150ms var(--lt-acelera) both; pointer-events: none; }
+.leticia-raiz .lt-continuar.lt-historico--abre { animation-name: lt-desdobra; }
+@keyframes lt-desdobra { from { opacity: 0; transform: translateY(-6px) scale(.98) } to { opacity: 1; transform: none } }
+@keyframes lt-recolhe { from { opacity: 1; transform: none } to { opacity: 0; transform: translateY(-4px) scale(.98) } }
+.leticia-raiz .lt-historico .lt-passado:last-child { border-bottom-color: transparent; }
+.leticia-raiz .lt-passado {
+  display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: baseline;
+  gap: var(--lt-e3); width: 100%;
+  padding: 7px 0;
+  font-size: 13px; --lt-b-cor: var(--lt-texto-suave);
+  border-bottom-width: 1px; border-bottom-style: solid;
+  transition: border-color var(--lt-micro) var(--lt-entre);
+}
+/* Sem opacidade reduzida: texto a 60% ficava abaixo do contraste mínimo. O
+   destaque no hover é a cor, não a transparência. */
+.leticia-raiz .lt-passado:hover,
+.leticia-raiz .lt-passado:focus-visible { --lt-b-cor: var(--lt-texto); --lt-b-borda: var(--lt-borda); }
+.leticia-raiz .lt-passado-texto { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.leticia-raiz .lt-passado-texto b { font-weight: 500; color: var(--lt-texto); }
+.leticia-raiz .lt-passado-acao { font-size: 13px; color: var(--lt-acento); white-space: nowrap; opacity: 0; transition: opacity var(--lt-micro) var(--lt-entre); }
+.leticia-raiz .lt-passado:hover .lt-passado-acao,
+.leticia-raiz .lt-passado:focus-visible .lt-passado-acao { opacity: 1; }
+/* No toque não existe hover: o "corrigir" fica sempre à vista. */
+@media (hover: none) {
+  .leticia-raiz .lt-passado-acao { opacity: 1; }
+}
+
+/* ---- turno atual --------------------------------------------------------- */
+.leticia-raiz .lt-turno {
+  display: flex; flex-direction: column; align-items: center;
+  gap: var(--lt-e4); text-align: center;
+}
+.leticia-raiz .lt-secao-aviso { font-size: 15px; line-height: 1.5; color: var(--lt-texto-suave); max-width: 56ch; text-wrap: pretty; }
+/* A reação dela à última resposta: voz dela, então cor de texto, não de nota. */
+.leticia-raiz .lt-ponte { font-size: 17px; line-height: 1.55; max-width: 52ch; text-wrap: pretty; }
+.leticia-raiz .lt-ponte--esquerda { max-width: 62ch; }
+
+/* Título e detalhe como um bloco só, mais juntos entre si do que do resto. */
+.leticia-raiz .lt-enunciado { display: flex; flex-direction: column; align-items: center; gap: var(--lt-e2); }
+/* A etapa como etiqueta: orienta sem pedir leitura. */
+.leticia-raiz .lt-etapa {
+  display: inline-flex; align-items: center;
+  font-size: 12px; font-weight: 500; letter-spacing: .02em;
+  color: var(--lt-acento); background: var(--lt-acento-fraco);
+  border-radius: 999px; padding: 4px 12px;
+}
+.leticia-raiz .lt-nota {
+  font-size: 14px; line-height: 1.5; color: var(--lt-atencao);
+  background: var(--lt-atencao-fraco); border-radius: 12px;
+  padding: var(--lt-e2) var(--lt-e3); max-width: 46ch; margin-top: var(--lt-e1);
+}
+.leticia-raiz .lt-pergunta {
+  font-size: 30px; line-height: 1.25; font-weight: 400; letter-spacing: -.015em;
+  max-width: 24ch; text-wrap: balance;
+}
+.leticia-raiz .lt-detalhe { font-size: 16px; line-height: 1.55; color: var(--lt-texto-suave); max-width: 46ch; text-wrap: pretty; }
+.leticia-raiz .lt-fala { font-size: 17px; line-height: 1.55; max-width: 56ch; }
+.leticia-raiz .lt-fala--suave { color: var(--lt-texto-suave); }
+.leticia-raiz .lt-balao {
+  max-width: min(86%, 52ch);
+  background: var(--lt-acento-fraco);
+  border-radius: 20px;
+  padding: var(--lt-e2) var(--lt-e4);
+  font-size: 15px; line-height: 1.5; color: var(--lt-texto-suave);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.leticia-raiz .lt-ajuda { font-size: 13px; line-height: 1.5; color: var(--lt-texto-suave); max-width: 56ch; }
+.leticia-raiz .lt-porque {
+  background: var(--lt-superficie); border: 1px solid var(--lt-borda);
+  border-radius: 18px; padding: var(--lt-e3) var(--lt-e4);
+  font-size: 15px; line-height: 1.55; color: var(--lt-texto-suave);
+  text-align: left; max-width: 56ch; margin: 0 auto;
+}
+
+/* ---- pontinhos ----------------------------------------------------------- */
+.leticia-raiz .lt-pensando { display: flex; align-items: center; justify-content: center; gap: 5px; height: 24px; }
+.leticia-raiz .lt-pensando i {
+  width: 5px; height: 5px; border-radius: 999px; background: var(--lt-texto-suave);
+  opacity: .3; animation: lt-pulsa 1.4s infinite var(--lt-entre);
+}
+.leticia-raiz .lt-pensando i:nth-child(2) { animation-delay: 160ms; }
+.leticia-raiz .lt-pensando i:nth-child(3) { animation-delay: 320ms; }
+.leticia-raiz .lt-pensando-rotulo { display: none; font-size: 13px; color: var(--lt-texto-suave); }
+@keyframes lt-pulsa { 0%,100% { opacity: .3 } 50% { opacity: 1 } }
+
+/* ---- área de resposta ---------------------------------------------------- */
+.leticia-raiz .lt-resposta {
+  position: relative;
+  margin-top: var(--lt-e5);
+  display: flex; flex-direction: column; align-items: center; gap: var(--lt-e3);
+  width: 100%;
+}
+.leticia-raiz .lt-campo {
+  width: 100%; max-width: 560px;
+  display: flex; align-items: flex-end; gap: var(--lt-e1);
+  background: var(--lt-superficie);
+  border: 1px solid transparent;
+  border-radius: 26px;
+  box-shadow: var(--lt-pilula);
+  padding: 5px 6px;
+  transition: border-color var(--lt-micro) var(--lt-entre), box-shadow var(--lt-micro) var(--lt-entre);
+}
+/* Quem mostra que o campo está ativo é a pílula, com uma sombra um pouco mais
+   funda — e só ela. O textarea de dentro não ganha contorno nenhum: o
+   :focus-visible de cima pintava um retângulo azul forte dentro da pílula, e
+   tema costuma somar a borda dele em `textarea:focus`. */
+.leticia-raiz .lt-campo:focus-within { border-color: var(--lt-borda); box-shadow: 0 1px 2px rgba(16,24,40,.06), 0 10px 30px rgba(16,24,40,.10); }
+.leticia-raiz .lt-campo textarea:focus,
+.leticia-raiz .lt-campo textarea:focus-visible { outline: none; border: 0; box-shadow: none; background: none; }
+.leticia-raiz .lt-campo--erro { border-color: var(--lt-atencao); }
+.leticia-raiz .lt-campo textarea {
+  flex: 1 1 auto; min-width: 0;
+  /* 16px é o piso: abaixo disso o iOS dá zoom sozinho ao focar o campo. */
+  font-size: 16px; line-height: 1.5;
+  resize: none; overflow-y: auto;
+  max-height: 9em; padding: 11px 4px;
+  text-align: left;
+}
+.leticia-raiz .lt-campo textarea::placeholder { color: var(--lt-texto-suave); opacity: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.leticia-raiz .lt-redondo {
+  flex: 0 0 auto;
+  width: 42px; height: 42px; border-radius: 999px;
+  display: grid; place-items: center;
+  --lt-b-cor: var(--lt-texto-suave);
+  font-size: 17px; line-height: 1;
+  transition: background var(--lt-micro) var(--lt-entre), color var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-redondo:hover { --lt-b-fundo: rgba(22,24,29,.05); --lt-b-cor: var(--lt-texto); }
+.leticia-raiz .lt-redondo--marcado,
+.leticia-raiz .lt-redondo--marcado:hover { --lt-b-fundo: var(--lt-acento-fraco); --lt-b-cor: var(--lt-acento); }
+.leticia-raiz .lt-enviar {
+  flex: 0 0 auto;
+  width: 42px; height: 42px; border-radius: 999px;
+  --lt-b-fundo: var(--lt-acento); --lt-b-cor: #fff;
+  display: grid; place-items: center;
+  transition: background var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-enviar:hover { --lt-b-fundo: var(--lt-acento-forte); }
+.leticia-raiz .lt-enviar[disabled],
+.leticia-raiz .lt-enviar[disabled]:hover { --lt-b-fundo: rgba(22,24,29,.06); --lt-b-cor: var(--lt-texto-suave); }
+.leticia-raiz .lt-microfone {
+  flex: 0 0 auto;
+  width: 42px; height: 42px; border-radius: 999px;
+  --lt-b-fundo: var(--lt-acento-fraco); --lt-b-cor: var(--lt-acento);
+  display: grid; place-items: center;
+  transition: background var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-microfone:hover { --lt-b-fundo: var(--lt-brilho); }
+.leticia-raiz .lt-aviso-voz { font-size: 14px; line-height: 1.5; color: var(--lt-texto-suave); max-width: 46ch; text-align: center; }
+
+/* ---- voz ----------------------------------------------------------------- */
+/* Gravando, a pílula vira medidor: mesmo lugar, mesmo tamanho. A pessoa não
+   perde de vista onde a resposta vai entrar. */
+.leticia-raiz .lt-gravando {
+  width: 100%; max-width: 560px; min-height: 54px;
+  display: flex; align-items: center; gap: var(--lt-e3);
+  background: var(--lt-superficie);
+  border: 1px solid var(--lt-borda);
+  border-radius: 26px;
+  box-shadow: var(--lt-pilula);
+  padding: 6px var(--lt-e4);
+}
+.leticia-raiz .lt-gravando-ponto {
+  flex: 0 0 auto; width: 10px; height: 10px; border-radius: 999px;
+  background: var(--lt-borda-forte);
+}
+.leticia-raiz .lt-gravando--ativo .lt-gravando-ponto { background: var(--lt-gravando); animation: lt-pulsa 1.4s infinite var(--lt-entre); }
+.leticia-raiz .lt-ondas {
+  flex: 1 1 auto; min-width: 0; height: 30px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 3px; overflow: hidden;
+}
+.leticia-raiz .lt-ondas i {
+  flex: 0 0 3px; height: 100%; border-radius: 999px;
+  background: var(--lt-acento); opacity: .75;
+  transform: scaleY(.08);
+  transition: transform 90ms linear;
+}
+.leticia-raiz .lt-gravando-tempo { flex: 0 0 auto; font-size: 14px; color: var(--lt-texto-suave); font-variant-numeric: tabular-nums; }
+.leticia-raiz .lt-gravando-tempo--fim { color: var(--lt-atencao); }
+.leticia-raiz .lt-ouvindo { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--lt-e1); min-height: 54px; }
+
+.leticia-raiz .lt-ouvido {
+  width: 100%; max-width: 560px;
+  display: flex; flex-direction: column; align-items: center; gap: var(--lt-e2);
+  background: var(--lt-superficie);
+  border: 1px solid var(--lt-borda);
+  border-radius: 22px;
+  box-shadow: var(--lt-sombra);
+  padding: var(--lt-e4) var(--lt-e5);
+  text-align: center;
+}
+.leticia-raiz .lt-ouvido--duvida { border-color: var(--lt-atencao); background: linear-gradient(var(--lt-atencao-fraco), var(--lt-atencao-fraco)), var(--lt-superficie); }
+.leticia-raiz .lt-ouvido-rotulo { font-size: 14px; color: var(--lt-texto-suave); }
+.leticia-raiz .lt-ouvido-texto {
+  font-size: 22px; line-height: 1.35; max-width: 32ch;
+  white-space: pre-wrap; overflow-wrap: anywhere; text-wrap: pretty;
+}
+.leticia-raiz .lt-ouvido-aviso {
+  display: inline-flex; align-items: flex-start; gap: 6px;
+  font-size: 14px; line-height: 1.45; color: var(--lt-atencao); max-width: 44ch; text-align: left;
+}
+.leticia-raiz .lt-ouvido-aviso svg { flex: 0 0 auto; margin-top: 2px; }
+.leticia-raiz .lt-ouvido-nota { font-size: 14px; line-height: 1.45; color: var(--lt-texto); background: var(--lt-acento-fraco); border-radius: 999px; padding: 2px 12px; }
+.leticia-raiz .lt-ouvido-pergunta { font-size: 15px; color: var(--lt-texto-suave); }
+
+.leticia-raiz .lt-linha-abaixo {
+  display: flex; align-items: center; justify-content: center;
+  gap: var(--lt-e3); min-height: 24px; flex-wrap: wrap;
+}
+.leticia-raiz .lt-acoes { display: flex; align-items: center; justify-content: center; gap: var(--lt-e1); flex-wrap: wrap; }
+.leticia-raiz .lt-dica { font-size: 13px; color: var(--lt-texto-suave); }
+/* Dois opcionais numa tela: um rótulo curto e uma linha para cada. */
+.leticia-raiz .lt-junto { display: flex; flex-direction: column; gap: var(--lt-e3); width: 100%; max-width: 520px; margin: 0 auto; }
+.leticia-raiz .lt-junto-linha { display: flex; flex-direction: column; gap: var(--lt-e1); text-align: left; }
+.leticia-raiz .lt-junto-rotulo { font-size: 13px; font-weight: 500; color: var(--lt-texto-suave); }
+.leticia-raiz .lt-junto-linha input {
+  width: 100%; min-height: 48px; padding: 0 var(--lt-e4);
+  font: inherit; font-size: 16px; color: var(--lt-texto);
+  background: var(--lt-superficie); border: 1px solid var(--lt-borda); border-radius: 14px;
+  box-shadow: var(--lt-sombra); outline: none;
+}
+.leticia-raiz .lt-junto-linha input:focus { border-color: var(--lt-borda-forte); }
+.leticia-raiz .lt-junto-acoes { display: flex; justify-content: center; margin-top: var(--lt-e4); }
+.leticia-raiz .lt-junto-acoes [hidden] { display: none; }
+.leticia-raiz .lt-btn--contorno { border-width: 1px; border-style: solid; --lt-b-borda: var(--lt-borda-forte); min-height: 44px; padding: 0 var(--lt-e4); border-radius: 999px; }
+.leticia-raiz .lt-solta-dica { margin: var(--lt-e3) auto 0; max-width: 46ch; text-align: center; font-size: 14px; line-height: 1.5; color: var(--lt-texto-suave); }
+.leticia-raiz .lt-dica-voz, .leticia-raiz .lt-dica { transition: opacity var(--lt-micro) var(--lt-entre); }
+.leticia-raiz .lt-apagado { opacity: 0; }
+.leticia-raiz .lt-dica-voz { margin: var(--lt-e3) auto 0; max-width: 46ch; text-align: center; font-size: 14px; line-height: 1.5; color: var(--lt-texto-suave); }
+/* Fora do fluxo: aparecer e sumir não pode empurrar a pergunta. */
+.leticia-raiz .lt-sugerindo { position: absolute; left: 0; right: 0; top: calc(100% + var(--lt-e3)); margin: 0; text-align: center; font-size: 14px; color: var(--lt-texto-suave); animation: lt-pulsa 1400ms var(--lt-entre) infinite; }
+/* O aceno do microfone: cresce um pouco, duas vezes, e para. */
+.leticia-raiz .lt-microfone--chama { animation: lt-chama 400ms var(--lt-entre) 400ms 2; }
+@keyframes lt-chama { 0%, 100% { transform: none } 50% { transform: scale(1.12) } }
+.leticia-raiz .lt-contador { font-size: 13px; color: var(--lt-texto-suave); font-variant-numeric: tabular-nums; }
+.leticia-raiz .lt-erro { font-size: 13px; line-height: 1.4; color: var(--lt-atencao); max-width: 56ch; }
+
+/* ---- botões -------------------------------------------------------------- */
+/* Alvo de toque nunca abaixo de 44px: é o mínimo para um dedo acertar. */
+.leticia-raiz .lt-btn {
+  display: inline-flex; align-items: center; gap: var(--lt-e2);
+  min-height: 44px; padding: 0 var(--lt-e4);
+  border-radius: 999px;
+  font-size: 15px; --lt-b-cor: var(--lt-texto-suave);
+  transition: color var(--lt-micro) var(--lt-entre), background var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-btn:hover { --lt-b-cor: var(--lt-texto); --lt-b-fundo: rgba(22,24,29,.04); }
+.leticia-raiz .lt-btn[disabled] { opacity: .4; }
+.leticia-raiz .lt-btn[disabled]:hover { --lt-b-cor: var(--lt-texto-suave); --lt-b-fundo: transparent; }
+
+.leticia-raiz .lt-btn-primario {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--lt-e2);
+  min-height: 48px; padding: 0 var(--lt-e5);
+  border-radius: 999px;
+  --lt-b-fundo: var(--lt-acento); --lt-b-cor: #fff; font-weight: 500; font-size: 16px;
+  transition: background var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-btn-primario:hover { --lt-b-fundo: var(--lt-acento-forte); }
+.leticia-raiz .lt-btn-primario[disabled],
+.leticia-raiz .lt-btn-primario[disabled]:hover { --lt-b-fundo: var(--lt-borda); --lt-b-cor: var(--lt-texto-suave); }
+.leticia-raiz .lt-btn-primario--menor { min-height: 44px; padding: 0 var(--lt-e4); font-size: 15px; white-space: nowrap; }
+
+.leticia-raiz .lt-escolhas { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--lt-e2); }
+
+/* A resposta já sugerida: o que o botão vai confirmar, antes dele. */
+.leticia-raiz .lt-sugestao {
+  margin: 0 auto var(--lt-e4); max-width: 44ch; text-align: center;
+  background: var(--lt-superficie); border: 1px solid var(--lt-borda);
+  border-radius: 18px; padding: var(--lt-e3) var(--lt-e5);
+}
+.leticia-raiz .lt-sugestao-rotulo { margin: 0; font-size: 13px; color: var(--lt-texto-suave); }
+.leticia-raiz .lt-sugestao-valor { margin: var(--lt-e1) 0 0; font-size: 16px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+.leticia-raiz .lt-escolha {
+  min-height: 48px; padding: 0 var(--lt-e5);
+  border-width: 1px; border-style: solid;
+  --lt-b-borda: var(--lt-borda);
+  --lt-b-fundo: var(--lt-superficie);
+  --lt-b-cor: var(--lt-texto);
+  --lt-b-sombra: var(--lt-sombra);
+  border-radius: 999px;
+  font-size: 16px;
+  transition: border-color var(--lt-micro) var(--lt-entre), background var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-escolha:hover { --lt-b-borda: var(--lt-borda-forte); }
+.leticia-raiz .lt-escolha[disabled] { opacity: .6; }
+.leticia-raiz .lt-escolha--marcada { --lt-b-borda: var(--lt-acento); --lt-b-fundo: var(--lt-acento-fraco); }
+
+/* ---- conferido ----------------------------------------------------------- */
+.leticia-raiz .lt-conferido { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--lt-sucesso); }
+.leticia-raiz .lt-conferido svg path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: lt-risca 260ms var(--lt-desacelera) forwards; }
+@keyframes lt-risca { to { stroke-dashoffset: 0 } }
+
+/* ---- upload -------------------------------------------------------------- */
+.leticia-raiz .lt-solta {
+  width: 100%; max-width: 560px;
+  border: 1px dashed var(--lt-borda-forte); border-radius: 22px;
+  background: var(--lt-superficie);
+  padding: var(--lt-e5); text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: var(--lt-e3);
+  transition: border-color var(--lt-micro) var(--lt-entre), background var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-solta--arrastando { border-color: var(--lt-acento); background: var(--lt-acento-fraco); }
+.leticia-raiz .lt-solta-titulo { font-size: 15px; font-weight: 500; }
+.leticia-raiz .lt-solta-sub { font-size: 13px; color: var(--lt-texto-suave); max-width: 46ch; }
+.leticia-raiz .lt-arquivos { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: var(--lt-e2); text-align: left; }
+.leticia-raiz .lt-arquivo {
+  display: grid; grid-template-columns: 40px minmax(0,1fr) 44px; align-items: center;
+  gap: var(--lt-e3);
+  background: var(--lt-superficie); border: 1px solid var(--lt-borda);
+  border-radius: 18px; padding: var(--lt-e3);
+  box-shadow: var(--lt-sombra);
+}
+.leticia-raiz .lt-arquivo--ruim { border-color: var(--lt-atencao); }
+.leticia-raiz .lt-arquivo-mini {
+  width: 40px; height: 40px; border-radius: 6px; background: var(--lt-fundo);
+  display: grid; place-items: center; overflow: hidden; color: var(--lt-texto-suave);
+}
+.leticia-raiz .lt-arquivo-mini img { width: 100%; height: 100%; object-fit: cover; }
+.leticia-raiz .lt-arquivo-nome { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.leticia-raiz .lt-arquivo-sub { font-size: 13px; color: var(--lt-texto-suave); font-variant-numeric: tabular-nums; }
+.leticia-raiz .lt-arquivo-sub--ruim { color: var(--lt-atencao); }
+.leticia-raiz .lt-arquivo-barra { height: 3px; border-radius: 999px; background: var(--lt-borda); overflow: hidden; margin-top: 6px; }
+.leticia-raiz .lt-arquivo-barra i { display: block; height: 100%; width: 0; background: var(--lt-acento); transition: width 90ms linear; }
+.leticia-raiz .lt-remover { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 999px; --lt-b-cor: var(--lt-texto-suave); }
+.leticia-raiz .lt-remover:hover { --lt-b-cor: var(--lt-texto); --lt-b-fundo: rgba(22,24,29,.04); }
+
+/* ---- rascunho ------------------------------------------------------------ */
+/* O texto que ela escreveu, num cartão que se lê como texto de site — à
+   esquerda, sem aspas — e não como balão de conversa. */
+.leticia-raiz .lt-proposta {
+  width: 100%; max-width: 560px;
+  background: var(--lt-superficie);
+  border: 1px solid var(--lt-borda); border-left: 3px solid var(--lt-acento);
+  border-radius: 18px; box-shadow: var(--lt-sombra);
+  padding: var(--lt-e4) var(--lt-e5);
+  text-align: left;
+}
+.leticia-raiz .lt-proposta-texto { font-size: 16px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; text-wrap: pretty; }
+.leticia-raiz .lt-proposta--lista { display: flex; flex-direction: column; gap: var(--lt-e3); }
+.leticia-raiz .lt-proposta-item { font-size: 15px; line-height: 1.5; color: var(--lt-texto-suave); overflow-wrap: anywhere; }
+.leticia-raiz .lt-proposta-item b { font-weight: 500; color: var(--lt-texto); }
+.leticia-raiz .lt-proposta + .lt-ajuda { text-align: center; }
+.leticia-raiz .lt-campo--longo { border-radius: 18px; border-color: var(--lt-borda); padding: 6px 12px; }
+.leticia-raiz .lt-campo--longo textarea { max-height: 22em; line-height: 1.6; }
+
+/* ---- revisão ------------------------------------------------------------- */
+.leticia-raiz .lt-revisao { display: flex; flex-direction: column; gap: var(--lt-e5); }
+.leticia-raiz .lt-titulo { font-size: 30px; line-height: 1.2; font-weight: 600; letter-spacing: -.02em; text-wrap: balance; }
+.leticia-raiz .lt-lista { border-top: 1px solid var(--lt-borda); }
+.leticia-raiz .lt-item {
+  display: grid; grid-template-columns: 172px minmax(0,1fr) auto; gap: var(--lt-e4);
+  align-items: baseline;
+  padding: var(--lt-e3) 0; border-bottom: 1px solid var(--lt-borda);
+}
+.leticia-raiz .lt-item-rotulo { font-size: 13px; color: var(--lt-texto-suave); }
+.leticia-raiz .lt-item-valor { font-size: 15px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.leticia-raiz .lt-item-valor--vazio { color: var(--lt-texto-suave); }
+.leticia-raiz .lt-item-site { margin-top: var(--lt-e2); font-size: 14px; line-height: 1.55; color: var(--lt-texto-suave); white-space: pre-wrap; }
+.leticia-raiz .lt-item-site b { font-weight: 500; color: var(--lt-texto); }
+.leticia-raiz .lt-editar { font-size: 13px; --lt-b-cor: var(--lt-acento); min-height: 44px; padding: 0 var(--lt-e2); border-radius: 999px; }
+.leticia-raiz .lt-editar:hover { --lt-b-fundo: var(--lt-acento-fraco); }
+
+.leticia-raiz .lt-aceite {
+  display: flex; gap: var(--lt-e3); align-items: flex-start;
+  background: var(--lt-superficie); border: 1px solid var(--lt-borda);
+  border-radius: 18px; padding: var(--lt-e4);
+}
+.leticia-raiz .lt-aceite input {
+  flex: 0 0 auto; width: 20px; height: 20px; margin-top: 2px;
+  border: 1px solid var(--lt-borda-forte); border-radius: 5px; background: var(--lt-superficie);
+  display: grid; place-items: center; cursor: pointer;
+}
+.leticia-raiz .lt-aceite input:checked { background: var(--lt-acento); border-color: var(--lt-acento); }
+.leticia-raiz .lt-aceite input:checked::after {
+  content: ""; width: 10px; height: 6px;
+  border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+  transform: rotate(-45deg) translate(1px,-2px);
+}
+.leticia-raiz .lt-aceite label { font-size: 15px; line-height: 1.5; cursor: pointer; display: block; }
+
+.leticia-raiz .lt-pendencia {
+  display: grid; grid-template-columns: 18px minmax(0,1fr); gap: var(--lt-e3); align-items: start;
+  border: 1px solid var(--lt-borda); border-left: 3px solid var(--lt-atencao);
+  background: var(--lt-atencao-fraco);
+  border-radius: 18px; padding: var(--lt-e3) var(--lt-e4);
+  font-size: 15px; line-height: 1.5;
+}
+.leticia-raiz .lt-pendencia svg { margin-top: 3px; color: var(--lt-atencao); }
+.leticia-raiz .lt-pendencia-titulo { font-weight: 500; margin-bottom: 2px; }
+.leticia-raiz .lt-pendencia ul { display: flex; flex-direction: column; gap: 2px; margin-bottom: var(--lt-e1); }
+.leticia-raiz .lt-pendencia li { position: relative; padding-left: 14px; }
+.leticia-raiz .lt-pendencia li::before { content: ""; position: absolute; left: 2px; top: .65em; width: 5px; height: 5px; border-radius: 999px; background: var(--lt-atencao); }
+
+/* ---- fim ----------------------------------------------------------------- */
+.leticia-raiz .lt-final { display: flex; flex-direction: column; gap: var(--lt-e4); max-width: 62ch; padding-top: var(--lt-e6); }
+.leticia-raiz .lt-selo { width: 44px; height: 44px; color: var(--lt-sucesso); }
+.leticia-raiz .lt-selo circle { stroke-dasharray: 126; stroke-dashoffset: 126; animation: lt-desenha 400ms var(--lt-desacelera) forwards; }
+.leticia-raiz .lt-selo path { stroke-dasharray: 30; stroke-dashoffset: 30; animation: lt-desenha 260ms var(--lt-desacelera) 200ms forwards; }
+@keyframes lt-desenha { to { stroke-dashoffset: 0 } }
+.leticia-raiz .lt-proximos { display: flex; flex-direction: column; gap: var(--lt-e2); }
+.leticia-raiz .lt-proximo { display: grid; grid-template-columns: 14px minmax(0,1fr); gap: var(--lt-e3); align-items: start; font-size: 15px; line-height: 1.5; }
+.leticia-raiz .lt-proximo i { width: 6px; height: 6px; border-radius: 999px; background: var(--lt-borda-forte); margin: 9px 0 0 4px; }
+.leticia-raiz .lt-saida { font-size: 15px; color: var(--lt-texto-suave); }
+
+.leticia-raiz .lt-link-anexo {
+  display: flex; flex-direction: column; gap: var(--lt-e2);
+  background: var(--lt-superficie); border: 1px solid var(--lt-borda); border-left: 3px solid var(--lt-atencao);
+  border-radius: 18px; padding: var(--lt-e4);
+}
+.leticia-raiz .lt-link-anexo-titulo { font-size: 16px; font-weight: 500; }
+.leticia-raiz .lt-link-anexo-linha { display: flex; flex-wrap: wrap; gap: var(--lt-e2); align-items: center; margin-top: var(--lt-e1); }
+.leticia-raiz .lt-link-anexo-linha input {
+  flex: 1 1 240px; min-width: 0; min-height: 44px;
+  border: 1px solid var(--lt-borda); border-radius: 12px; padding: 0 var(--lt-e3);
+  background: var(--lt-fundo); color: var(--lt-texto-suave);
+  font-size: 14px; text-overflow: ellipsis;
+}
+.leticia-raiz .lt-link-anexo-linha input:hover,
+.leticia-raiz .lt-link-anexo-linha input:focus { border-color: var(--lt-borda-forte); box-shadow: none; outline: none; background: var(--lt-fundo); }
+.leticia-raiz .lt-aceite input:hover,
+.leticia-raiz .lt-aceite input:focus { border-color: var(--lt-borda-forte); box-shadow: none; }
+.leticia-raiz .lt-aceite input:checked:hover,
+.leticia-raiz .lt-aceite input:checked:focus { background: var(--lt-acento); border-color: var(--lt-acento); }
+
+/* ---- retomada ------------------------------------------------------------ */
+.leticia-raiz .lt-retomada {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--lt-e2) var(--lt-e3);
+  background: var(--lt-superficie); border: 1px solid var(--lt-borda);
+  border-radius: 18px; padding: var(--lt-e3) var(--lt-e4);
+  margin-bottom: var(--lt-e5); font-size: 15px;
+}
+.leticia-raiz .lt-retomada p { flex: 1 1 260px; min-width: 0; }
+.leticia-raiz .lt-retomada button { font-size: 15px; --lt-b-cor: var(--lt-acento); min-height: 44px; padding: 0 var(--lt-e2); border-radius: 999px; }
+.leticia-raiz .lt-retomada button:hover { --lt-b-fundo: var(--lt-acento-fraco); }
+
+/* ---- movimento ----------------------------------------------------------- */
+/* A palavra que acende. inline-block porque transform não vale em inline;
+   max-width e a quebra em qualquer ponto seguram e-mail e endereço de site
+   longos dentro da coluna no celular. */
+.leticia-raiz .lt-palavra {
+  display: inline-block; max-width: 100%; overflow-wrap: anywhere;
+  opacity: 0;
+  animation: lt-palavra 380ms var(--lt-desacelera) forwards;
+}
+@keyframes lt-palavra {
+  from { opacity: 0; transform: translateY(.3em) }
+  60%  { opacity: 1 }
+  to   { opacity: 1; transform: none }
+}
+
+/* Só transform e opacity. Animar height, top ou box-shadow força o navegador
+   a refazer layout a cada quadro. Nenhuma animação passa de 420 ms. */
+.leticia-raiz .lt-entra { animation: lt-entra var(--lt-entrada) var(--lt-desacelera) both; }
+@keyframes lt-entra { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+
+.leticia-raiz .lt-entra-curto { animation: lt-entra-curto var(--lt-padrao) var(--lt-desacelera) both; }
+@keyframes lt-entra-curto { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
+
+.leticia-raiz .lt-sobe { animation: lt-sobe 200ms var(--lt-entre) both; }
+@keyframes lt-sobe { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: none } }
+
+.leticia-raiz .lt-treme { animation: lt-treme 180ms var(--lt-entre) 2; }
+
+/* Já no lugar, esperando a vez de aparecer: ocupa o espaço, não se vê e não
+   se clica. Vem depois das entradas para vencê-las enquanto espera. */
+.leticia-raiz .lt-aguarda { opacity: 0; animation: none; pointer-events: none; }
+@keyframes lt-treme { 0%,100% { transform: none } 25% { transform: translateX(-3px) } 75% { transform: translateX(3px) } }
+
+.leticia-raiz .lt-invisivel {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+/* ---- celular ------------------------------------------------------------- */
+/* O celular é o caso principal, não a exceção: a orientação da base toda é
+   preencher pelo telefone. */
+@media (max-width: 680px) {
+  .leticia-raiz .lt-topo { padding-left: var(--lt-e4); padding-right: var(--lt-e4); }
+  .leticia-raiz .lt-corpo { padding-left: var(--lt-e4); padding-right: var(--lt-e4); padding-bottom: var(--lt-e2); }
+  .leticia-raiz .lt-pe { padding-left: var(--lt-e4); padding-right: var(--lt-e4); }
+  .leticia-raiz .lt-historico-ancora { width: calc(100% - 2 * var(--lt-e4)); }
+  .leticia-raiz .lt-pergunta { font-size: 24px; max-width: 20ch; }
+  .leticia-raiz .lt-detalhe { font-size: 15px; }
+  .leticia-raiz .lt-ponte { font-size: 16px; }
+  .leticia-raiz .lt-titulo { font-size: 24px; }
+  .leticia-raiz .lt-fala { font-size: 16px; }
+  .leticia-raiz .lt-ouvido { padding: var(--lt-e3) var(--lt-e4); }
+  .leticia-raiz .lt-proposta { padding: var(--lt-e3) var(--lt-e4); }
+  .leticia-raiz .lt-proposta-texto { font-size: 15px; }
+  .leticia-raiz .lt-ouvido-texto { font-size: 19px; }
+  .leticia-raiz .lt-item { grid-template-columns: minmax(0,1fr) auto; gap: var(--lt-e1) var(--lt-e3); }
+  .leticia-raiz .lt-item-rotulo { grid-column: 1 / -1; }
+}
+
+/* ---- movimento reduzido -------------------------------------------------- */
+/* Desliga o deslocamento, não a informação: o fluxo, os tempos de espera e o
+   que é dito continuam idênticos.
+
+   A segunda exceção ao "nenhum !important". Aqui ele não é remendo, é o
+   mecanismo: `.leticia-raiz *` vale 0-1-0 e perde para `.leticia-raiz .lt-entra`,
+   que vale 0-2-0 — sem ele as animações continuariam para quem pediu ao
+   sistema que não houvesse. */
+@media (prefers-reduced-motion: reduce) {
+  .leticia-raiz *, .leticia-raiz *::before, .leticia-raiz *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+  .leticia-raiz .lt-pensando i { display: none; }
+  .leticia-raiz .lt-pensando-rotulo { display: block; }
+}

@@ -1,0 +1,85 @@
+/* =========================================================================
+   [leticia_links] — a página da equipe que gera links de briefing.
+
+   Só para a equipe, e por isso sóbria: um formulário, o link gerado e a
+   lista dos recentes. Tudo dentro de .leticia-links, para o tema da página
+   não mexer e isto não mexer no tema.
+   ========================================================================= */
+
+.leticia-links {
+  --ll-texto: #16181D;
+  --ll-suave: #5B6170;
+  --ll-borda: #E1E3E8;
+  --ll-fundo: #FFFFFF;
+  --ll-acento: #1F5EFF;
+  --ll-bom: #0E7A55;
+  --ll-ruim: #B42318;
+
+  max-width: 760px; margin: 0 auto; padding: 8px 0 32px;
+  font-family: Inter, "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  font-size: 15px; line-height: 1.55; color: var(--ll-texto);
+  box-sizing: border-box;
+}
+.leticia-links *, .leticia-links *::before, .leticia-links *::after { box-sizing: inherit; }
+
+.leticia-links h2 { margin: 0 0 6px; font-size: 22px; line-height: 1.25; font-weight: 600; }
+.leticia-links h3 { margin: 32px 0 10px; font-size: 16px; font-weight: 600; }
+.leticia-links p { margin: 0 0 12px; }
+.leticia-links .leticia-links-nota { color: var(--ll-suave); font-size: 14px; }
+.leticia-links a { color: var(--ll-acento); }
+
+.leticia-links-form {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px;
+  margin: 16px 0 0; padding: 20px;
+  background: var(--ll-fundo); border: 1px solid var(--ll-borda); border-radius: 14px;
+}
+.leticia-links-form label { display: flex; flex-direction: column; gap: 4px; margin: 0; }
+.leticia-links-form label span { font-size: 13px; font-weight: 500; color: var(--ll-suave); }
+.leticia-links-form input[type="text"] {
+  width: 100%; min-height: 44px; margin: 0; padding: 0 12px;
+  font: inherit; font-size: 15px; color: var(--ll-texto);
+  background: #FFFFFF; border: 1px solid var(--ll-borda); border-radius: 10px; box-shadow: none;
+}
+.leticia-links-form input[type="text"]:focus { border-color: var(--ll-acento); outline: 2px solid rgba(31, 94, 255, .25); outline-offset: 0; }
+.leticia-links-form button[type="submit"] {
+  grid-column: 1 / -1; justify-self: start;
+  min-height: 44px; padding: 0 22px; margin: 4px 0 0;
+  font: inherit; font-weight: 600; color: #FFFFFF;
+  background: var(--ll-acento); border: 0; border-radius: 999px; cursor: pointer;
+}
+.leticia-links-form .leticia-links-nota { grid-column: 1 / -1; margin: 0; }
+
+.leticia-links-aviso { margin: 16px 0 0; padding: 12px 14px; border-radius: 10px; font-size: 14px; }
+.leticia-links-aviso.e-ruim { background: #FEF3F2; color: var(--ll-ruim); border: 1px solid #FECDCA; }
+
+.leticia-links-resultado { display: flex; flex-direction: column; gap: 8px; }
+.leticia-links-resultado.e-bom {
+  margin: 16px 0 0; padding: 16px; font-size: 14px;
+  background: #ECFDF3; border: 1px solid #ABEFC6; border-radius: 12px;
+}
+.leticia-links-linha { display: flex; gap: 8px; }
+.leticia-links-linha input {
+  flex: 1 1 auto; min-width: 0; min-height: 38px; margin: 0; padding: 0 10px;
+  font: 13px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ll-suave);
+  background: #F7F8FA; border: 1px solid var(--ll-borda); border-radius: 8px;
+}
+.leticia-links-linha button {
+  flex: 0 0 auto; min-height: 38px; padding: 0 14px; margin: 0;
+  font: inherit; font-size: 13px; font-weight: 600; color: var(--ll-texto);
+  background: #FFFFFF; border: 1px solid var(--ll-borda); border-radius: 8px; cursor: pointer;
+}
+.leticia-links-zap { font-size: 14px; font-weight: 500; }
+
+.leticia-links-tabela { width: 100%; border-collapse: collapse; font-size: 14px; }
+.leticia-links-tabela th { text-align: left; font-weight: 500; color: var(--ll-suave); padding: 8px 10px; border-bottom: 1px solid var(--ll-borda); }
+.leticia-links-tabela td { vertical-align: top; padding: 12px 10px; border-bottom: 1px solid var(--ll-borda); }
+.leticia-links-tabela td:last-child { width: 46%; }
+.leticia-links-tabela small { color: var(--ll-suave); }
+
+@media (max-width: 640px) {
+  .leticia-links-form { grid-template-columns: 1fr; padding: 16px; }
+  .leticia-links-tabela thead { display: none; }
+  .leticia-links-tabela tr { display: block; padding: 12px 0; border-bottom: 1px solid var(--ll-borda); }
+  .leticia-links-tabela td,
+  .leticia-links-tabela td:last-child { display: block; padding: 4px 0; border: 0; width: auto; }
+}

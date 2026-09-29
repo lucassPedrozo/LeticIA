@@ -1,0 +1,2140 @@
+<title>LetícIA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+
+<style>
+/* =========================================================================
+   LetícIA - protótipo de tela (Fase 1)
+   Descartável, menos três coisas: o texto das perguntas, os tokens e as
+   medidas do movimento.
+
+   Toda regra começa com .leticia-raiz. A única exceção está marcada logo
+   abaixo e não vai para o plugin.
+   ========================================================================= */
+
+/* fora do plugin: só o protótipo precisa pintar o fundo da página hospedeira */
+body { background: #FBFBFC; }
+
+/* ---- tokens ------------------------------------------------------------ */
+.leticia-raiz {
+  --lt-fundo:        #FBFBFC;
+  --lt-superficie:   #FFFFFF;
+  --lt-borda:        #E7E8EC;
+  --lt-borda-forte:  #D6D8DE;
+  --lt-texto:        #16181D;
+  --lt-texto-suave:  #6B7280;
+  --lt-acento:       #1F5EFF;
+  --lt-acento-fraco: rgba(31, 94, 255, .08);
+  --lt-brilho:       rgba(31, 94, 255, .13);   /* o halo atrás do centro */
+  --lt-pilula:       0 1px 2px rgba(16,24,40,.05), 0 6px 20px rgba(16,24,40,.07);
+  --lt-sucesso:      #0E9F6E;
+  --lt-atencao:      #B45309;
+  --lt-atencao-fraco: rgba(180, 83, 9, .07);
+
+  --lt-e1: 4px;  --lt-e2: 8px;  --lt-e3: 12px; --lt-e4: 16px;
+  --lt-e5: 24px; --lt-e6: 32px; --lt-e7: 48px; --lt-e8: 64px;
+
+  --lt-raio-campo: 10px;
+  --lt-raio-botao: 8px;
+
+  --lt-sombra: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+
+  --lt-micro: 120ms; --lt-padrao: 220ms; --lt-entrada: 320ms; --lt-progresso: 420ms;
+  --lt-desacelera: cubic-bezier(.2,0,0,1);
+  --lt-acelera:    cubic-bezier(.4,0,1,1);
+  --lt-entre:      cubic-bezier(.4,0,.2,1);
+
+  --lt-coluna: 640px;
+
+  color-scheme: light;
+  font-family: Inter, "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--lt-texto);
+  background: var(--lt-fundo);
+  -webkit-font-smoothing: antialiased;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+/* ---- reset de território ------------------------------------------------ */
+.leticia-raiz *,
+.leticia-raiz *::before,
+.leticia-raiz *::after { box-sizing: border-box; }
+
+.leticia-raiz button,
+.leticia-raiz input,
+.leticia-raiz textarea,
+.leticia-raiz select {
+  font: inherit; color: inherit; letter-spacing: inherit;
+  margin: 0; padding: 0;
+  border: 0; border-radius: 0;
+  background: none; box-shadow: none;
+  text-transform: none; text-align: left;
+  line-height: inherit; min-height: 0; width: auto;
+  -webkit-appearance: none; appearance: none;
+}
+.leticia-raiz button { cursor: pointer; }
+.leticia-raiz button[disabled] { cursor: default; }
+.leticia-raiz label { display: inline; margin: 0; font-weight: inherit; font-size: inherit; color: inherit; }
+.leticia-raiz p { margin: 0; padding: 0; font-size: inherit; line-height: inherit; }
+.leticia-raiz ul, .leticia-raiz ol, .leticia-raiz li { margin: 0; padding: 0; list-style: none; }
+.leticia-raiz h1, .leticia-raiz h2 { margin: 0; font-size: inherit; font-weight: 500; line-height: inherit; }
+.leticia-raiz svg { display: block; }
+.leticia-raiz [hidden] { display: none !important; }
+
+.leticia-raiz :focus { outline: none; }
+.leticia-raiz :focus-visible {
+  outline: 2px solid var(--lt-acento);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---- cabeçalho e progresso ---------------------------------------------- */
+.leticia-raiz .lt-topo {
+  position: sticky; top: 0; z-index: 20;
+  background: rgba(251,251,252,.93);
+  border-bottom: 1px solid var(--lt-borda);
+  padding: var(--lt-e3) var(--lt-e5) 0;
+  padding-top: max(var(--lt-e3), env(safe-area-inset-top));
+}
+@supports (backdrop-filter: blur(6px)) {
+  .leticia-raiz .lt-topo { backdrop-filter: saturate(1.2) blur(6px); }
+}
+.leticia-raiz .lt-topo-interno {
+  width: 100%; max-width: var(--lt-coluna); margin: 0 auto;
+  padding-bottom: var(--lt-e3);
+}
+.leticia-raiz .lt-topo-linha {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--lt-e3); margin-bottom: var(--lt-e2);
+}
+.leticia-raiz .lt-marca { font-size: 13px; font-weight: 600; letter-spacing: .01em; }
+.leticia-raiz .lt-marca span { font-weight: 400; color: var(--lt-texto-suave); }
+.leticia-raiz .lt-contagem { font-size: 13px; color: var(--lt-texto-suave); font-variant-numeric: tabular-nums; }
+
+.leticia-raiz .lt-barra { display: flex; gap: var(--lt-e1); }
+.leticia-raiz .lt-segmento {
+  height: 4px; border-radius: 999px; background: var(--lt-borda);
+  overflow: hidden;
+  transition: background var(--lt-entrada) var(--lt-entre);
+}
+.leticia-raiz .lt-segmento--feito { background: var(--lt-borda-forte); }
+.leticia-raiz .lt-segmento i {
+  display: block; height: 100%; width: 0%;
+  background: var(--lt-acento); border-radius: 999px;
+  transition: width var(--lt-progresso) var(--lt-entre);
+}
+
+/* ---- corpo --------------------------------------------------------------- */
+/* Na conversa a pergunta ocupa o centro da tela, com a entrada logo abaixo.
+   Na revisão e no fim a coluna volta a correr de cima para baixo. */
+.leticia-raiz .lt-corpo {
+  position: relative;
+  flex: 1 1 auto;
+  padding: var(--lt-e5) var(--lt-e5) var(--lt-e4);
+  display: flex; flex-direction: column;
+  overflow-x: clip;
+}
+.leticia-raiz[data-fase="conversa"] .lt-corpo,
+.leticia-raiz[data-fase="fim"] .lt-corpo { justify-content: center; }
+.leticia-raiz[data-fase="conversa"] .lt-corpo::before {
+  content: ""; position: absolute; z-index: 0; pointer-events: none;
+  left: 50%; top: 54%; transform: translate(-50%, -50%);
+  width: min(1180px, 150%); height: min(560px, 70vh);
+  background: radial-gradient(closest-side, var(--lt-brilho), transparent 78%);
+}
+.leticia-raiz .lt-coluna {
+  position: relative; z-index: 1;
+  width: 100%; max-width: var(--lt-coluna); margin: 0 auto;
+  flex: 0 0 auto; display: flex; flex-direction: column;
+}
+.leticia-raiz[data-fase="revisao"] .lt-coluna { flex: 1 1 auto; }
+
+/* ---- histórico ----------------------------------------------------------- */
+/* Fica fora da composição até alguém pedir: o cliente precisa poder olhar
+   para trás, mas não deve ter que olhar. */
+.leticia-raiz .lt-abrir-historico {
+  align-self: flex-start;
+  font-size: 13px; color: var(--lt-texto-suave);
+  min-height: 32px; padding: 0 var(--lt-e2) 0 0;
+  border-radius: 999px;
+  transition: color var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-abrir-historico:hover { color: var(--lt-texto); }
+.leticia-raiz .lt-historico { display: flex; flex-direction: column; margin-bottom: var(--lt-e4); }
+.leticia-raiz .lt-historico:empty { margin-bottom: 0; }
+.leticia-raiz .lt-passado {
+  display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: baseline;
+  gap: var(--lt-e3); width: 100%;
+  padding: 7px 0;
+  font-size: 13px; color: var(--lt-texto-suave);
+  opacity: .6;
+  border-bottom: 1px solid transparent;
+  transition: opacity var(--lt-micro) var(--lt-entre), border-color var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-passado:hover,
+.leticia-raiz .lt-passado:focus-visible { opacity: 1; border-bottom-color: var(--lt-borda); }
+.leticia-raiz .lt-passado-texto { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.leticia-raiz .lt-passado-texto b { font-weight: 500; color: var(--lt-texto); }
+.leticia-raiz .lt-passado-acao { font-size: 13px; color: var(--lt-acento); white-space: nowrap; opacity: 0; transition: opacity var(--lt-micro) var(--lt-entre); }
+.leticia-raiz .lt-passado:hover .lt-passado-acao,
+.leticia-raiz .lt-passado:focus-visible .lt-passado-acao { opacity: 1; }
+.leticia-raiz .lt-passado--aberto { opacity: 1; }
+.leticia-raiz .lt-passado--aberto .lt-passado-texto { white-space: normal; }
+
+/* ---- turno atual --------------------------------------------------------- */
+.leticia-raiz .lt-turno {
+  display: flex; flex-direction: column; align-items: center;
+  gap: var(--lt-e4); text-align: center;
+}
+.leticia-raiz .lt-secao-aviso {
+  font-size: 15px; line-height: 1.5; color: var(--lt-texto-suave); max-width: 56ch;
+}
+.leticia-raiz .lt-pergunta {
+  font-size: 30px; line-height: 1.28; font-weight: 400; letter-spacing: -.015em;
+  max-width: 24ch; text-wrap: balance;
+}
+.leticia-raiz .lt-fala { font-size: 17px; line-height: 1.55; max-width: 56ch; }
+.leticia-raiz .lt-fala--suave { color: var(--lt-texto-suave); }
+.leticia-raiz .lt-balao {
+  max-width: min(86%, 52ch);
+  background: var(--lt-acento-fraco);
+  border-radius: 20px;
+  padding: var(--lt-e2) var(--lt-e4);
+  font-size: 15px; line-height: 1.5; color: var(--lt-texto-suave);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.leticia-raiz .lt-ajuda { font-size: 13px; line-height: 1.5; color: var(--lt-texto-suave); max-width: 56ch; }
+.leticia-raiz .lt-porque {
+  background: var(--lt-superficie); border: 1px solid var(--lt-borda);
+  border-radius: 18px; padding: var(--lt-e3) var(--lt-e4);
+  font-size: 15px; line-height: 1.55; color: var(--lt-texto-suave);
+  text-align: left; max-width: 56ch; margin: 0 auto;
+}
+
+/* ---- pontinhos ----------------------------------------------------------- */
+.leticia-raiz .lt-pensando { display: flex; align-items: center; justify-content: center; gap: 5px; height: 24px; }
+.leticia-raiz .lt-pensando i {
+  width: 5px; height: 5px; border-radius: 999px; background: var(--lt-texto-suave);
+  opacity: .3; animation: lt-pulsa 1.4s infinite var(--lt-entre);
+}
+.leticia-raiz .lt-pensando i:nth-child(2) { animation-delay: 160ms; }
+.leticia-raiz .lt-pensando i:nth-child(3) { animation-delay: 320ms; }
+.leticia-raiz .lt-pensando-rotulo { display: none; font-size: 13px; color: var(--lt-texto-suave); }
+@keyframes lt-pulsa { 0%,100% { opacity: .3 } 50% { opacity: 1 } }
+
+/* ---- área de resposta ---------------------------------------------------- */
+.leticia-raiz .lt-resposta {
+  margin-top: var(--lt-e5);
+  display: flex; flex-direction: column; align-items: center; gap: var(--lt-e3);
+  width: 100%;
+}
+.leticia-raiz .lt-campo {
+  width: 100%; max-width: 560px;
+  display: flex; align-items: flex-end; gap: var(--lt-e1);
+  background: var(--lt-superficie);
+  border: 1px solid transparent;
+  border-radius: 26px;
+  box-shadow: var(--lt-pilula);
+  padding: 5px 6px 5px 6px;
+  transition: border-color var(--lt-micro) var(--lt-entre), box-shadow var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-campo:focus-within { border-color: var(--lt-acento-fraco); box-shadow: 0 1px 2px rgba(16,24,40,.05), 0 8px 28px rgba(31,94,255,.12); }
+.leticia-raiz .lt-campo--erro { border-color: var(--lt-atencao); }
+.leticia-raiz .lt-campo textarea {
+  flex: 1 1 auto; min-width: 0;
+  font-size: 16px; line-height: 1.5;
+  resize: none; overflow-y: auto;
+  max-height: 9em; padding: 11px 4px;
+  text-align: left;
+}
+.leticia-raiz .lt-campo textarea::placeholder { color: var(--lt-texto-suave); opacity: .9; }
+.leticia-raiz .lt-redondo {
+  flex: 0 0 auto;
+  width: 42px; height: 42px; border-radius: 999px;
+  display: grid; place-items: center;
+  color: var(--lt-texto-suave);
+  font-size: 17px; line-height: 1;
+  transition: background var(--lt-micro) var(--lt-entre), color var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-redondo:hover { background: rgba(22,24,29,.05); color: var(--lt-texto); }
+.leticia-raiz .lt-redondo--marcado { background: var(--lt-acento-fraco); color: var(--lt-acento); }
+.leticia-raiz .lt-enviar {
+  flex: 0 0 auto;
+  width: 42px; height: 42px; border-radius: 999px;
+  background: var(--lt-acento); color: #fff;
+  display: grid; place-items: center;
+  transition: background var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-enviar[disabled] { background: rgba(22,24,29,.06); color: var(--lt-texto-suave); }
+.leticia-raiz .lt-linha-abaixo {
+  display: flex; align-items: center; justify-content: center;
+  gap: var(--lt-e3); min-height: 24px; flex-wrap: wrap;
+}
+.leticia-raiz .lt-acoes { display: flex; align-items: center; justify-content: center; gap: var(--lt-e1); flex-wrap: wrap; }
+.leticia-raiz .lt-dica { font-size: 13px; color: var(--lt-texto-suave); }
+.leticia-raiz .lt-contador { font-size: 13px; color: var(--lt-texto-suave); font-variant-numeric: tabular-nums; }
+.leticia-raiz .lt-erro { font-size: 13px; line-height: 1.4; color: var(--lt-atencao); max-width: 56ch; }
+
+/* ---- botões -------------------------------------------------------------- */
+.leticia-raiz .lt-btn {
+  display: inline-flex; align-items: center; gap: var(--lt-e2);
+  min-height: 44px; padding: 0 var(--lt-e4);
+  border-radius: 999px;
+  font-size: 15px; color: var(--lt-texto-suave);
+  transition: color var(--lt-micro) var(--lt-entre), background var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-btn:hover { color: var(--lt-texto); background: rgba(22,24,29,.04); }
+.leticia-raiz .lt-btn[disabled] { opacity: .4; }
+.leticia-raiz .lt-btn[disabled]:hover { color: var(--lt-texto-suave); background: none; }
+
+.leticia-raiz .lt-btn-primario {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--lt-e2);
+  min-height: 48px; padding: 0 var(--lt-e5);
+  border-radius: 999px;
+  background: var(--lt-acento); color: #fff; font-weight: 500; font-size: 16px;
+  transition: background var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-btn-primario[disabled] { background: var(--lt-borda); color: var(--lt-texto-suave); }
+
+.leticia-raiz .lt-escolhas { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--lt-e2); }
+.leticia-raiz .lt-escolha {
+  min-height: 48px; padding: 0 var(--lt-e5);
+  border: 1px solid var(--lt-borda);
+  background: var(--lt-superficie);
+  border-radius: 999px;
+  box-shadow: var(--lt-sombra);
+  font-size: 16px;
+  transition: border-color var(--lt-micro) var(--lt-entre), background var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-escolha:hover { border-color: var(--lt-borda-forte); }
+.leticia-raiz .lt-escolha--marcada { border-color: var(--lt-acento); background: var(--lt-acento-fraco); }
+
+/* ---- conferido ----------------------------------------------------------- */
+.leticia-raiz .lt-conferido { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--lt-sucesso); }
+.leticia-raiz .lt-conferido svg path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: lt-risca 260ms var(--lt-desacelera) forwards; }
+@keyframes lt-risca { to { stroke-dashoffset: 0 } }
+
+/* ---- upload -------------------------------------------------------------- */
+.leticia-raiz .lt-solta {
+  width: 100%; max-width: 560px;
+  border: 1px dashed var(--lt-borda-forte); border-radius: 22px;
+  background: var(--lt-superficie);
+  padding: var(--lt-e5); text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: var(--lt-e3);
+  transition: border-color var(--lt-micro) var(--lt-entre), background var(--lt-micro) var(--lt-entre);
+}
+.leticia-raiz .lt-solta--arrastando { border-color: var(--lt-acento); background: var(--lt-acento-fraco); }
+.leticia-raiz .lt-solta-titulo { font-size: 15px; font-weight: 500; }
+.leticia-raiz .lt-solta-sub { font-size: 13px; color: var(--lt-texto-suave); max-width: 46ch; }
+.leticia-raiz .lt-arquivos { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: var(--lt-e2); text-align: left; }
+.leticia-raiz .lt-arquivos:empty { display: none; }
+.leticia-raiz .lt-arquivo {
+  display: grid; grid-template-columns: 40px minmax(0,1fr) 44px; align-items: center;
+  gap: var(--lt-e3);
+  background: var(--lt-superficie); border: 1px solid var(--lt-borda);
+  border-radius: 18px; padding: var(--lt-e3);
+  box-shadow: var(--lt-sombra);
+}
+.leticia-raiz .lt-arquivo--ruim { border-color: var(--lt-atencao); }
+.leticia-raiz .lt-arquivo-mini {
+  width: 40px; height: 40px; border-radius: 6px; background: var(--lt-fundo);
+  display: grid; place-items: center; overflow: hidden; color: var(--lt-texto-suave);
+}
+.leticia-raiz .lt-arquivo-mini img { width: 100%; height: 100%; object-fit: cover; }
+.leticia-raiz .lt-arquivo-nome { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.leticia-raiz .lt-arquivo-sub { font-size: 13px; color: var(--lt-texto-suave); font-variant-numeric: tabular-nums; }
+.leticia-raiz .lt-arquivo-sub--ruim { color: var(--lt-atencao); }
+.leticia-raiz .lt-arquivo-barra { height: 3px; border-radius: 999px; background: var(--lt-borda); overflow: hidden; margin-top: 6px; }
+.leticia-raiz .lt-arquivo-barra i { display: block; height: 100%; width: 0; background: var(--lt-acento); transition: width 90ms linear; }
+.leticia-raiz .lt-remover { width: 44px; height: 44px; display: grid; place-items: center; border-radius: var(--lt-raio-botao); color: var(--lt-texto-suave); }
+.leticia-raiz .lt-remover:hover { color: var(--lt-texto); background: rgba(22,24,29,.04); }
+
+/* ---- revisão ------------------------------------------------------------- */
+.leticia-raiz .lt-revisao { display: flex; flex-direction: column; gap: var(--lt-e5); }
+.leticia-raiz .lt-titulo { font-size: 30px; line-height: 1.2; font-weight: 600; letter-spacing: -.02em; text-wrap: balance; }
+.leticia-raiz .lt-lista { border-top: 1px solid var(--lt-borda); }
+.leticia-raiz .lt-item {
+  display: grid; grid-template-columns: 172px minmax(0,1fr) auto; gap: var(--lt-e4);
+  align-items: baseline;
+  padding: var(--lt-e3) 0; border-bottom: 1px solid var(--lt-borda);
+}
+.leticia-raiz .lt-item-rotulo { font-size: 13px; color: var(--lt-texto-suave); }
+.leticia-raiz .lt-item-valor { font-size: 15px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.leticia-raiz .lt-item-valor--vazio { color: var(--lt-texto-suave); }
+.leticia-raiz .lt-editar { font-size: 13px; color: var(--lt-acento); min-height: 44px; padding: 0 var(--lt-e2); border-radius: var(--lt-raio-botao); }
+.leticia-raiz .lt-editar:hover { background: var(--lt-acento-fraco); }
+
+.leticia-raiz .lt-aceite {
+  display: flex; gap: var(--lt-e3); align-items: flex-start;
+  background: var(--lt-superficie); border: 1px solid var(--lt-borda);
+  border-radius: 18px; padding: var(--lt-e4);
+}
+.leticia-raiz .lt-aceite input {
+  flex: 0 0 auto; width: 20px; height: 20px; margin-top: 2px;
+  border: 1px solid var(--lt-borda-forte); border-radius: 5px; background: var(--lt-superficie);
+  display: grid; place-items: center; cursor: pointer;
+}
+.leticia-raiz .lt-aceite input:checked { background: var(--lt-acento); border-color: var(--lt-acento); }
+.leticia-raiz .lt-aceite input:checked::after {
+  content: ""; width: 10px; height: 6px;
+  border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+  transform: rotate(-45deg) translate(1px,-2px);
+}
+.leticia-raiz .lt-aceite label { font-size: 15px; line-height: 1.5; cursor: pointer; display: block; }
+
+.leticia-raiz .lt-pendencia {
+  display: grid; grid-template-columns: 18px minmax(0,1fr); gap: var(--lt-e3); align-items: start;
+  border: 1px solid var(--lt-borda); border-left: 3px solid var(--lt-atencao);
+  background: var(--lt-atencao-fraco);
+  border-radius: 18px; padding: var(--lt-e3) var(--lt-e4);
+  font-size: 15px; line-height: 1.5;
+}
+.leticia-raiz .lt-pendencia svg { margin-top: 3px; color: var(--lt-atencao); }
+
+/* ---- fim ----------------------------------------------------------------- */
+.leticia-raiz .lt-final { display: flex; flex-direction: column; gap: var(--lt-e4); max-width: 62ch; padding-top: var(--lt-e6); }
+.leticia-raiz .lt-selo { width: 44px; height: 44px; color: var(--lt-sucesso); }
+.leticia-raiz .lt-selo circle { stroke-dasharray: 126; stroke-dashoffset: 126; animation: lt-desenha 400ms var(--lt-desacelera) forwards; }
+.leticia-raiz .lt-selo path { stroke-dasharray: 30; stroke-dashoffset: 30; animation: lt-desenha 260ms var(--lt-desacelera) 200ms forwards; }
+@keyframes lt-desenha { to { stroke-dashoffset: 0 } }
+.leticia-raiz .lt-proximos { display: flex; flex-direction: column; gap: var(--lt-e2); }
+.leticia-raiz .lt-proximo { display: grid; grid-template-columns: 14px minmax(0,1fr); gap: var(--lt-e3); align-items: start; font-size: 15px; line-height: 1.5; }
+.leticia-raiz .lt-proximo i { width: 6px; height: 6px; border-radius: 999px; background: var(--lt-borda-forte); margin: 9px 0 0 4px; }
+.leticia-raiz .lt-saida { font-size: 15px; color: var(--lt-texto-suave); }
+.leticia-raiz .lt-saida a { color: var(--lt-acento); }
+
+/* ---- retomada ------------------------------------------------------------ */
+.leticia-raiz .lt-retomada {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--lt-e2) var(--lt-e3);
+  background: var(--lt-superficie); border: 1px solid var(--lt-borda);
+  border-radius: 18px; padding: var(--lt-e3) var(--lt-e4);
+  margin-bottom: var(--lt-e5); font-size: 15px;
+}
+.leticia-raiz .lt-retomada p { flex: 1 1 260px; min-width: 0; }
+.leticia-raiz .lt-retomada button { font-size: 15px; color: var(--lt-acento); min-height: 44px; padding: 0 var(--lt-e2); border-radius: var(--lt-raio-botao); }
+.leticia-raiz .lt-retomada button:hover { background: var(--lt-acento-fraco); }
+
+/* ---- movimento ----------------------------------------------------------- */
+.leticia-raiz .lt-entra { animation: lt-entra var(--lt-entrada) var(--lt-desacelera) both; }
+@keyframes lt-entra { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+
+.leticia-raiz .lt-entra-curto { animation: lt-entra-curto var(--lt-padrao) var(--lt-desacelera) both; }
+@keyframes lt-entra-curto { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
+
+.leticia-raiz .lt-sobe { animation: lt-sobe 200ms var(--lt-entre) both; }
+@keyframes lt-sobe { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: none } }
+
+.leticia-raiz .lt-treme { animation: lt-treme 180ms var(--lt-entre) 2; }
+@keyframes lt-treme { 0%,100% { transform: none } 25% { transform: translateX(-3px) } 75% { transform: translateX(3px) } }
+
+.leticia-raiz .lt-invisivel {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+/* ---- painel do protótipo (não vai para o plugin) ------------------------- */
+.leticia-raiz .lt-oficina {
+  position: fixed; left: 12px; bottom: 12px; z-index: 40;
+  display: flex; flex-direction: column; gap: 6px;
+  background: var(--lt-superficie); border: 1px solid var(--lt-borda);
+  border-radius: var(--lt-raio-campo); padding: 10px 12px;
+  box-shadow: var(--lt-sombra);
+  font-size: 12px; color: var(--lt-texto-suave);
+  max-width: 230px;
+}
+.leticia-raiz .lt-oficina-titulo { font-weight: 600; color: var(--lt-texto); letter-spacing: .06em; text-transform: uppercase; font-size: 10px; }
+.leticia-raiz .lt-oficina label { display: flex; align-items: center; gap: 8px; cursor: pointer; min-height: 22px; }
+.leticia-raiz .lt-oficina input { width: 14px; height: 14px; border: 1px solid var(--lt-borda-forte); border-radius: 3px; display: grid; place-items: center; }
+.leticia-raiz .lt-oficina input:checked { background: var(--lt-acento); border-color: var(--lt-acento); }
+.leticia-raiz .lt-oficina input:checked::after { content: ""; width: 7px; height: 4px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg) translate(1px,-1px); }
+.leticia-raiz .lt-oficina button { font-size: 12px; color: var(--lt-acento); text-align: left; min-height: 22px; }
+
+/* ---- celular ------------------------------------------------------------- */
+@media (max-width: 680px) {
+  .leticia-raiz .lt-topo { padding-left: var(--lt-e4); padding-right: var(--lt-e4); }
+  .leticia-raiz .lt-corpo { padding-left: var(--lt-e4); padding-right: var(--lt-e4); padding-bottom: max(var(--lt-e4), env(safe-area-inset-bottom)); }
+  .leticia-raiz .lt-pergunta { font-size: 24px; max-width: 20ch; }
+  .leticia-raiz .lt-titulo { font-size: 24px; }
+  .leticia-raiz .lt-fala { font-size: 16px; }
+  .leticia-raiz .lt-item { grid-template-columns: minmax(0,1fr) auto; gap: var(--lt-e1) var(--lt-e3); }
+  .leticia-raiz .lt-item-rotulo { grid-column: 1 / -1; }
+  .leticia-raiz .lt-oficina { left: 8px; right: 8px; bottom: 8px; max-width: none; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 2px 14px; }
+}
+
+/* ---- movimento reduzido -------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .leticia-raiz *, .leticia-raiz *::before, .leticia-raiz *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+  .leticia-raiz .lt-pensando i { display: none; }
+  .leticia-raiz .lt-pensando-rotulo { display: block; }
+}
+</style>
+
+<div class="leticia-raiz" id="lt-raiz" data-fase="conversa">
+
+  <header class="lt-topo">
+    <div class="lt-topo-interno">
+      <div class="lt-topo-linha">
+        <h1 class="lt-marca">LetícIA <span>· briefing do Site Express</span></h1>
+        <p class="lt-contagem" id="lt-contagem">Etapa 1 de 3 · 0 de 15</p>
+      </div>
+      <div class="lt-barra" id="lt-barra" role="progressbar" aria-valuemin="0" aria-valuemax="15" aria-valuenow="0" aria-label="Campos respondidos"></div>
+    </div>
+  </header>
+
+  <main class="lt-corpo">
+    <div class="lt-coluna">
+      <div id="lt-retomada"></div>
+      <button type="button" class="lt-abrir-historico" id="lt-abrir" hidden aria-expanded="false" aria-controls="lt-historico"></button>
+      <div class="lt-historico" id="lt-historico" hidden></div>
+      <div id="lt-palco"></div>
+    </div>
+  </main>
+
+  <p class="lt-invisivel" aria-live="polite" id="lt-anuncio"></p>
+
+  <aside class="lt-oficina" aria-label="Painel do protótipo">
+    <span class="lt-oficina-titulo">Protótipo</span>
+    <label><input type="checkbox" id="lt-api" checked> API do Gemini ligada</label>
+    <label><input type="checkbox" id="lt-json"> Forçar JSON quebrado</label>
+    <label><input type="checkbox" id="lt-rede"> Falhar o envio</label>
+    <button type="button" id="lt-zerar">Recomeçar do zero</button>
+  </aside>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* =======================================================================
+     ÍCONES — seis, traço 1,5, sem biblioteca
+     ======================================================================= */
+  var ICO = {
+    enviar:   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M12 5l7 7-7 7"/></svg>',
+    check:    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>',
+    remover:  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    alerta:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16.5v.5"/><path d="M10.3 3.9L2.9 17.1A2 2 0 004.6 20h14.8a2 2 0 001.7-2.9L13.7 3.9a2 2 0 00-3.4 0z"/></svg>',
+    arquivo:  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z"/></svg>',
+    selo:     '<svg class="lt-selo" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="20"/><path d="M15 24.5l6.5 6.5L33 19"/></svg>'
+  };
+
+  /* =======================================================================
+     LETICIA_CAMPOS — a definição dos 15 campos.
+     A ordem é esta e não muda. Cada pergunta tem variantes escritas à mão:
+     variar o fraseado é o que mais disfarça que do outro lado não tem gente.
+     ======================================================================= */
+  var CAMPOS = [
+    {
+      chave: 'responsavel', secao: 1, tipo: 'texto', obrigatorio: true, comenta: false,
+      rotulo: 'Responsável',
+      dica: 'Nome de quem a equipe pode procurar.',
+      perguntas: [
+        'Pra começar: quem vai aprovar o site?',
+        'Vamos começar pelo começo. Qual o nome de quem vai acompanhar e aprovar o site?',
+        'Primeiro o básico: quem é a pessoa que aprova o site?'
+      ],
+      ajuda: {
+        porque: 'A equipe precisa saber quem procurar quando surgir dúvida no meio da produção. Sem um nome, o projeto para no primeiro impasse.',
+        serve: 'Pode ser você ou outra pessoa da empresa, desde que esteja autorizada no cadastro. Exemplo bom: "Marina Alves, sócia". Insuficiente: "o pessoal do marketing".',
+        borda: 'Se quem aprova é outra pessoa, coloca o nome dela aqui — e mais adiante o WhatsApp de quem a equipe deve chamar.'
+      }
+    },
+    {
+      chave: 'empresa', secao: 1, tipo: 'texto', obrigatorio: true, comenta: false,
+      rotulo: 'Empresa',
+      dica: 'Como a empresa se chama.',
+      perguntas: [
+        'Qual o nome da empresa?',
+        'E a empresa, como se chama?',
+        'Agora o nome da empresa.'
+      ],
+      ajuda: {
+        porque: 'É o nome que vai no topo do site, no rodapé e no título da aba do navegador.',
+        serve: 'O nome pelo qual o cliente te conhece. Se o nome de fantasia é diferente do da nota fiscal, manda o de fantasia.',
+        borda: 'Ainda não tem nome definido? Escreve o que você pretende usar e a gente ajusta depois.'
+      }
+    },
+    {
+      chave: 'whatsapp', secao: 1, tipo: 'telefone', obrigatorio: true, comenta: false,
+      rotulo: 'WhatsApp do responsável',
+      dica: 'Com DDD.',
+      perguntas: [
+        'Qual o WhatsApp do responsável, com DDD?',
+        'Me passa o WhatsApp de quem a equipe deve chamar, com DDD.',
+        'E o WhatsApp para a equipe falar com você? Pode mandar com DDD.'
+      ],
+      ajuda: {
+        porque: 'É por aqui que a equipe fala com você durante a produção. Como o prazo é de 72 horas, uma pergunta sem resposta custa caro.',
+        serve: 'Um número com DDD que alguém atende. Exemplo: (47) 99999-9999.',
+        borda: 'Esse número não vai para o site — a menos que você peça. O contato que aparece no site a gente pergunta mais adiante.'
+      }
+    },
+    {
+      chave: 'email', secao: 1, tipo: 'email', obrigatorio: false, comenta: false,
+      rotulo: 'E-mail para contato',
+      dica: 'Opcional.',
+      perguntas: [
+        'Tem um e-mail para contato? É opcional — se preferir, dá pra pular.',
+        'Quer deixar um e-mail? Serve para a cópia de confirmação do briefing. Pode pular também.'
+      ],
+      ajuda: {
+        porque: 'Para onde vai a cópia de confirmação deste briefing, e por onde a equipe manda o que não cabe no WhatsApp.',
+        serve: 'Um endereço que você confere de verdade. Um Gmail pessoal serve.',
+        borda: 'É opcional. Sem e-mail, tudo acontece pelo WhatsApp.'
+      }
+    },
+    {
+      chave: 'dominio', secao: 1, tipo: 'dominio', obrigatorio: true, comenta: true,
+      rotulo: 'Domínio do site',
+      dica: 'Ou "ainda não tenho".',
+      perguntas: [
+        'O site vai ficar em qual endereço? Se ainda não tiver um, me diz "ainda não tenho".',
+        'Qual o domínio do site — o endereço que a pessoa digita pra te achar? Se não tiver ainda, sem problema: escreve "ainda não tenho".'
+      ],
+      ajuda: {
+        porque: 'É onde o site vai morar. A equipe precisa saber se aponta para um endereço que já existe ou se registra um novo — e registrar leva um tempo que não está dentro das 72 horas.',
+        serve: 'Pode escrever com ou sem o "www". Exemplo: joinvix.com.br. Se você só tem ideia do nome, escreve a ideia e eu anoto como pendente.',
+        borda: 'Domínio é o endereço do site na internet, tipo joinvix.com.br. Não é o mesmo que o e-mail nem que o perfil do Instagram. Se você não tem certeza se já tem um, a equipe confere pra você.'
+      }
+    },
+    {
+      chave: 'endereco', secao: 1, tipo: 'texto', obrigatorio: false, comenta: false,
+      rotulo: 'Endereço da empresa',
+      dica: 'Opcional. O link do Google Maps também serve.',
+      perguntas: [
+        'A empresa tem endereço físico? Se puder, cola o link do Google Maps — aí o mapa do site cai no lugar certo.',
+        'Qual o endereço da empresa? Link do Google Maps serve, e dá pra pular se não tiver ponto físico.'
+      ],
+      ajuda: {
+        porque: 'Vira o mapa e o rodapé do site. Com o link do Maps o pino cai exato, sem risco de a equipe errar o número.',
+        serve: 'Rua, número, bairro e cidade. Ou o link do Maps, que já traz tudo.',
+        borda: 'Empresa só online não precisa de endereço. Escreve "atendimento somente online" ou só a cidade, ou pula.'
+      }
+    },
+
+    {
+      chave: 'ramo', secao: 2, tipo: 'texto', obrigatorio: true, comenta: true,
+      rotulo: 'Ramo de atividade',
+      dica: 'O que a empresa faz, do seu jeito.',
+      perguntas: [
+        'Qual é o ramo de atividade? Me conta o que a empresa faz.',
+        'O que a sua empresa faz? Pode escrever do seu jeito, com suas palavras.'
+      ],
+      ajuda: {
+        porque: 'É a primeira coisa que a equipe lê pra decidir a cara do site e escrever a abertura. Site de advogado e site de hamburgueria não se parecem em nada.',
+        serve: 'Duas ou três linhas já bastam. Exemplo bom: "padaria artesanal, pães de fermentação natural e bolos de festa por encomenda". Insuficiente: "vendo de tudo um pouco" — com isso a equipe não consegue escrever nem o título da página.',
+        borda: 'Se a empresa faz coisas muito diferentes entre si, diz qual delas você quer que apareça primeiro no site.'
+      }
+    },
+    {
+      chave: 'servicos', secao: 2, tipo: 'texto', obrigatorio: true, comenta: true,
+      rotulo: 'Serviços',
+      dica: 'Pode listar um por linha.',
+      perguntas: [
+        'Descreve de forma objetiva quais são os seus serviços. Pode listar um por linha.',
+        'Agora os serviços: o que você vende ou oferece? Uma lista simples já serve.'
+      ],
+      ajuda: {
+        porque: 'Cada serviço vira um bloco na página. Sem a lista, a equipe inventa ou deixa a página magra.',
+        serve: 'Nome de cada serviço, e uma linha do que ele inclui quando não for óbvio. Exemplo: "bolos de festa por encomenda — a partir de 1 kg, com 3 dias de antecedência".',
+        borda: 'Não precisa ser tudo que você faz. Só o que você quer vender pelo site.'
+      }
+    },
+    {
+      chave: 'contatos_site', secao: 2, tipo: 'texto', obrigatorio: true, comenta: true,
+      rotulo: 'Contatos exibidos no site',
+      dica: 'O que o visitante vai ver.',
+      perguntas: [
+        'Quais dados de contato devem aparecer no site?',
+        'E no site, quais contatos o visitante vai ver?'
+      ],
+      ajuda: {
+        porque: 'É o contato que fica visível no site — o que o seu cliente usa pra te chamar. Não é o seu contato com a JoinVix, esse você já me passou lá em cima.',
+        serve: 'Telefone ou WhatsApp comercial com DDD, e-mail que a empresa divulga, endereço se tiver ponto físico e horário de atendimento se fizer sentido.',
+        borda: 'Não quer mostrar o celular pessoal? Deixa só o e-mail e o formulário de contato — as mensagens caem no seu e-mail sem expor o número.'
+      }
+    },
+    {
+      chave: 'redes_sociais', secao: 2, tipo: 'texto', obrigatorio: false, comenta: true,
+      rotulo: 'Redes sociais',
+      dica: 'Opcional. Endereço completo ou @ do perfil.',
+      perguntas: [
+        'Tem redes sociais pra linkar no site? Pode mandar o endereço do perfil ou o @.',
+        'Quais redes sociais você quer que apareçam no site? Se não tiver nenhuma, dá pra pular.'
+      ],
+      ajuda: {
+        porque: 'Viram os ícones que levam o visitante pro seu perfil. Cada um precisa apontar pro lugar certo.',
+        serve: 'O endereço completo do perfil, tipo instagram.com/suaempresa. O @ também serve, a gente acha.',
+        borda: 'Não tem rede nenhuma? Pula. Dá pra acrescentar depois sem refazer o site.'
+      }
+    },
+    {
+      chave: 'paginas_extras', secao: 2, tipo: 'texto', obrigatorio: false, comenta: false,
+      rotulo: 'Páginas além do menu padrão',
+      dica: 'Opcional. "Não" é resposta completa.',
+      perguntas: [
+        'O menu já vem com Home, Sobre, Serviços e Contato. Quer mais alguma página ou link?',
+        'Além de Home, Sobre, Serviços e Contato, falta alguma página? "Não" é uma resposta completa.'
+      ],
+      ajuda: {
+        porque: 'O Site Express já vem com quatro páginas. Se você precisa de uma quinta, a equipe precisa saber agora — depois de montado, mexer no menu é retrabalho.',
+        serve: 'O nome da página e o que vai nela. Exemplo: "Cardápio, com as fotos e os preços dos pães". Um link para outro sistema também vale.',
+        borda: 'Página só existe se tiver conteúdo pra ela. Pedir uma página sem ter o texto costuma virar uma página vazia no site.'
+      }
+    },
+    {
+      chave: 'imagens_ia', secao: 2, tipo: 'escolha', obrigatorio: true, comenta: false,
+      rotulo: 'Imagens de banco ou IA',
+      opcoes: [
+        { valor: 'sim', texto: 'Sim, podem usar' },
+        { valor: 'nao', texto: 'Não, só as minhas' }
+      ],
+      perguntas: [
+        'A gente pode usar imagens de banco ou geradas por IA pra completar o visual do site?',
+        'Sobre as imagens: a equipe pode completar o layout com fotos de banco ou geradas por IA?'
+      ],
+      ajuda: {
+        porque: 'Define do que o site é feito quando o seu material não cobre tudo. É uma autorização, então precisa partir de você.',
+        serve: 'Diz sim se você não tem muitas fotos próprias, ou se as que tem não ficaram boas — o site fica bem mais apresentável. Diz não se o seu negócio depende de mostrar o produto real: roupa, comida, obra, portfólio.',
+        borda: 'Dá pra fazer meio-termo: você manda as fotos dos seus produtos e autoriza banco de imagens só pro resto do layout. Se for esse o caso, diz sim e me conta isso nos materiais.'
+      }
+    },
+
+    {
+      chave: 'logo', secao: 3, tipo: 'arquivo', obrigatorio: true, comenta: false,
+      rotulo: 'Logomarca',
+      multiplo: false,
+      aceita: ['png', 'jpg', 'jpeg', 'svg', 'pdf', 'ai', 'eps', 'zip'],
+      aceitaTexto: 'PNG, JPG, SVG, PDF, AI, EPS ou ZIP',
+      perguntas: [
+        'Agora os arquivos. Manda a logomarca da empresa.',
+        'Chegamos nos arquivos. Começando pela logomarca da empresa.'
+      ],
+      ajuda: {
+        porque: 'A logomarca define a cor e o topo do site inteiro. É o único arquivo que a equipe não consegue substituir por nada.',
+        serve: 'O arquivo original, se você tiver — PDF, AI ou EPS abrem em qualquer tamanho sem borrar. PNG e JPG também servem, de preferência grandes.',
+        borda: 'Não está com o arquivo na mão agora? Manda o briefing assim mesmo e me diz — eu marco como pendente e a equipe te manda um endereço pra anexar depois. Só lembra que as 72 horas começam quando a logomarca chegar.'
+      }
+    },
+    {
+      chave: 'textos', secao: 3, tipo: 'arquivo', obrigatorio: false, comenta: false,
+      rotulo: 'Textos do site',
+      multiplo: true,
+      aceita: ['doc', 'docx', 'pdf', 'txt', 'odt'],
+      aceitaTexto: 'DOC, DOCX, PDF, TXT ou ODT',
+      perguntas: [
+        'Você já tem os textos do site prontos? Se tiver, manda aqui. Se não tiver, pula: a equipe escreve com o que você me contou.',
+        'Se já existir texto pronto pro site, manda aqui. É opcional — sem texto, a equipe escreve a partir do que você respondeu.'
+      ],
+      ajuda: {
+        porque: 'Texto pronto poupa uma ida e volta inteira. Sem ele, a equipe escreve a partir do que você respondeu aqui e você aprova depois.',
+        serve: 'Word, PDF, bloco de notas — qualquer coisa legível. Pode mandar mais de um arquivo.',
+        borda: 'É opcional de verdade. A maior parte dos clientes do Site Express não manda texto nenhum.'
+      }
+    },
+    {
+      chave: 'materiais', secao: 3, tipo: 'arquivo', obrigatorio: false, comenta: false,
+      rotulo: 'Fotos, vídeos e materiais',
+      multiplo: true,
+      aceita: ['png', 'jpg', 'jpeg', 'webp', 'heic', 'mp4', 'mov', 'zip'],
+      aceitaTexto: 'imagens, vídeos ou ZIP',
+      temLink: true,
+      perguntas: [
+        'Por último: fotos, vídeos e materiais da empresa.',
+        'Fechando: tem fotos, vídeos ou outros materiais da empresa pra mandar?'
+      ],
+      ajuda: {
+        porque: 'Foto sua é o que diferencia o seu site de qualquer outro do mesmo ramo. É o material que mais muda o resultado.',
+        serve: 'Fotos do ponto, da equipe, dos produtos, do trabalho pronto. Vídeo também. Se for muita coisa, manda um ZIP ou o endereço de uma pasta compartilhada.',
+        borda: 'Se você tem 2 GB de fotos, não tenta subir uma a uma: cola o endereço do Drive ou do WeTransfer no campo de baixo. É o caminho que a equipe já usa.'
+      }
+    }
+  ];
+
+  var SECOES = [
+    { numero: 1, nome: 'Seus dados' },
+    { numero: 2, nome: 'Seu negócio' },
+    { numero: 3, nome: 'Arquivos' }
+  ];
+
+  /* Fala de abertura de cada seção. A da seção 2 existe pra destravar quem
+     acha que precisa escrever bonito. */
+  var ABERTURA_SECAO = {
+    2: 'Com o que você escrever daqui pra frente a equipe monta os textos do site. Não precisa caprichar na redação — só nas informações.',
+    3: 'Agora os arquivos. Só a logomarca é obrigatória, e nem ela trava o envio.'
+  };
+
+  var TEXTO_CONSENTIMENTO = 'Concordo em enviar o material necessário e ser contatado pela equipe JoinVix para a criação do site';
+
+  /* =======================================================================
+     UTILITÁRIOS
+     ======================================================================= */
+  var $ = function (id) { return document.getElementById(id); };
+
+  function criar(tag, classe, html) {
+    var el = document.createElement(tag);
+    if (classe) { el.className = classe; }
+    if (html !== undefined) { el.innerHTML = html; }
+    return el;
+  }
+  function espera(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function reduzido() { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+  function normalizar(t) {
+    return (t || '').toString().toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  }
+  function sortear(lista) { return lista[Math.floor(Math.random() * lista.length)]; }
+  function escapar(t) {
+    return (t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function tamanhoLegivel(bytes) {
+    if (bytes < 1024) { return bytes + ' B'; }
+    if (bytes < 1024 * 1024) { return Math.round(bytes / 1024) + ' KB'; }
+    return (bytes / (1024 * 1024)).toFixed(bytes > 10485760 ? 0 : 1).replace('.', ',') + ' MB';
+  }
+  function anunciar(texto) { $('lt-anuncio').textContent = texto; }
+
+  /* Revelação palavra por palavra. Teto de 1,2 s para o texto inteiro:
+     encenação longa demais deixa de parecer humana e passa a parecer lenta. */
+  function revelar(el, texto) {
+    anunciar(texto);
+    if (reduzido()) { el.textContent = texto; return Promise.resolve(); }
+    el.textContent = '';
+    var partes = texto.split(/(\s+)/).filter(function (p) { return p !== ''; });
+    var palavras = partes.filter(function (p) { return !/^\s+$/.test(p); }).length;
+    var passo = 20 + Math.random() * 14;
+    var pausa = 120;
+    var pontos = (texto.match(/[.!?](\s|$)/g) || []).length;
+    var total = palavras * passo + pontos * pausa;
+    if (total > 1200) { var f = 1200 / total; passo *= f; pausa *= f; }
+    return new Promise(function (pronto) {
+      var i = 0;
+      (function seguir() {
+        if (i >= partes.length) { return pronto(); }
+        var parte = partes[i];
+        el.textContent += parte;
+        i++;
+        var branco = /^\s+$/.test(parte);
+        var fechou = /[.!?]$/.test(parte.trim());
+        setTimeout(seguir, (branco ? 0 : passo) + (fechou ? pausa : 0));
+      })();
+    });
+  }
+
+  /* =======================================================================
+     LETICIA_VALIDACAO — formato, no servidor. Nunca julga conteúdo.
+     ======================================================================= */
+  var Validacao = {
+    telefone: function (bruto) {
+      var d = (bruto || '').replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, '');
+      if (d.length < 10 || d.length > 11) {
+        return { ok: false, erro: 'Faltou alguma coisa no número. Preciso do DDD mais o telefone — dez ou onze dígitos, tipo (47) 99999-9999.' };
+      }
+      var ddd = d.slice(0, 2), resto = d.slice(2);
+      if (Number(ddd) < 11) {
+        return { ok: false, erro: 'Esse DDD não existe por aqui. Confere os dois primeiros números?' };
+      }
+      var meio = resto.length === 9 ? resto.slice(0, 5) : resto.slice(0, 4);
+      return { ok: true, valor: '(' + ddd + ') ' + meio + '-' + resto.slice(meio.length), conferido: true };
+    },
+    email: function (bruto) {
+      var t = (bruto || '').trim();
+      if (!/^[^\s@]+@[^\s@.]+\.[^\s@]{2,}$/.test(t)) {
+        return { ok: false, erro: 'Esse e-mail parece incompleto. Dá uma conferida — costuma ser um ponto ou o @ que escapou.' };
+      }
+      return { ok: true, valor: t.toLowerCase(), conferido: true };
+    },
+    dominio: function (bruto) {
+      var s = normalizar(bruto);
+      if (/^(ainda )?nao tenho|nao tenho ainda|nenhum|^nao$|sem dominio|nao sei|ainda nao/.test(s)) {
+        return { ok: true, valor: 'ainda não tenho', pendente: true };
+      }
+      var t = (bruto || '').trim().replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/.*$/, '').toLowerCase();
+      if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(t)) {
+        return { ok: false, erro: 'Não consegui ler isso como endereço de site. Seria algo como suaempresa.com.br — ou, se ainda não tiver, escreve "ainda não tenho".' };
+      }
+      return { ok: true, valor: t, conferido: true };
+    },
+    texto: function (bruto, campo) {
+      var t = (bruto || '').trim().replace(/[ \t]+/g, ' ');
+      if (campo.obrigatorio && t.length < 2) {
+        return { ok: false, erro: 'Preciso de alguma coisa aqui pra seguir.' };
+      }
+      return { ok: true, valor: t };
+    },
+    checar: function (campo, bruto) {
+      if (campo.tipo === 'telefone') { return this.telefone(bruto); }
+      if (campo.tipo === 'email') { return this.email(bruto); }
+      if (campo.tipo === 'dominio') { return this.dominio(bruto); }
+      return this.texto(bruto, campo);
+    }
+  };
+
+  /* Heurística barata, no PHP: a mensagem parece pergunta?
+     Erra para o lado de chamar o modelo. */
+  function pareceDuvida(bruto) {
+    var s = normalizar(bruto);
+    if (/\?/.test(bruto)) { return true; }
+    return /^(o que|oq|pq|por que|porque|pra que|para que|como|quem|posso|preciso|tem que|e se|nao sei|nao entendi|nao|onde|qual a diferenca|isso e|serve pra)/.test(s);
+  }
+
+  /* =======================================================================
+     O MODELO — aqui é falso. No plugin, uma chamada por mensagem do cliente,
+     JSON estruturado, temperatura 0,2, só o bloco do campo atual no pedido.
+     ======================================================================= */
+  var Modelo = {
+    ligado: true,
+    quebrarJson: false,
+
+    consultar: function (campo, bruto, contexto) {
+      var eu = this;
+      return espera(600 + Math.random() * 700).then(function () {
+        if (!eu.ligado) { throw new Error('modelo indisponível'); }
+        if (eu.quebrarJson) { throw new SyntaxError('JSON malformado'); }
+        return eu.simular(campo, bruto, contexto);
+      });
+    },
+
+    simular: function (campo, bruto, contexto) {
+      var s = normalizar(bruto);
+      var resp = {
+        tipo: 'resposta', suficiente: true, valor_limpo: null,
+        comentario: null, repergunta: null, resposta_duvida: null
+      };
+
+      /* fora de escopo: preço, contrato, suporte. Encaminha e segue. */
+      if (/(quanto custa|qual o preco|qual o valor|quanto fica|desconto|parcel|reembolso|cancelar contrato|mudar de plano)/.test(s)) {
+        resp.tipo = 'fora_de_escopo';
+        resp.resposta_duvida = 'Valor e condição quem trata é a equipe comercial — isso eu não falo. '
+          + (contexto.whatsapp
+              ? 'Eles te chamam no ' + contexto.whatsapp + ', que é o número que você deixou aqui.'
+              : 'Assim que você terminar o briefing, eles te procuram.');
+        return resp;
+      }
+
+      /* injeção: o texto do cliente é dado, nunca ordem. Grava e segue. */
+      if (/(ignore|desconsidere|esqueca).{0,24}(instruc|regras|anterior)|voce agora e|aja como/.test(s)) {
+        resp.valor_limpo = limpar(bruto);
+        return resp;
+      }
+
+      if (pareceDuvida(bruto) && !respostaPlausivel(campo, bruto)) {
+        resp.tipo = 'duvida';
+        resp.resposta_duvida = responderDuvida(campo, bruto);
+        return resp;
+      }
+
+      resp.valor_limpo = limpar(bruto);
+
+      if (vaga(campo, bruto)) {
+        resp.suficiente = false;
+        resp.repergunta = REPERGUNTA[campo.chave]
+          ? REPERGUNTA[campo.chave](bruto)
+          : 'Me conta um pouco mais? Com isso a equipe ainda não consegue montar a página.';
+        return resp;
+      }
+
+      resp.comentario = comentar(campo, bruto, contexto);
+      return resp;
+    }
+  };
+
+  function limpar(bruto) {
+    var t = (bruto || '').trim().replace(/[ \t]+/g, ' ');
+    if (t && /^[a-zà-ú]/.test(t)) { t = t.charAt(0).toUpperCase() + t.slice(1); }
+    return t;
+  }
+
+  /* "não" e "não tenho" são respostas completas, não dúvidas. */
+  function respostaPlausivel(campo, bruto) {
+    var s = normalizar(bruto);
+    if (!campo.obrigatorio && /^(nao|nao tenho|nenhum|nenhuma|nao possuo|so isso)\b/.test(s) && s.length < 24) { return true; }
+    if (campo.chave === 'dominio' && /^(ainda )?nao tenho/.test(s)) { return true; }
+    return false;
+  }
+
+  function vaga(campo, bruto) {
+    if (['ramo', 'servicos'].indexOf(campo.chave) === -1) {
+      if (campo.chave === 'contatos_site') {
+        return !/\d|@/.test(bruto) && normalizar(bruto).indexOf('formulario') === -1;
+      }
+      return false;
+    }
+    var s = normalizar(bruto);
+    var palavras = s.split(/\s+/).filter(Boolean).length;
+    if (/(de tudo um pouco|varias coisas|um pouco de tudo|diversos|de tudo)/.test(s)) { return true; }
+    return palavras <= 3 || s.length < 14;
+  }
+
+  var REPERGUNTA = {
+    ramo: function (bruto) {
+      return 'Consigo trabalhar com isso, mas por enquanto a equipe não teria nem o título da página. '
+        + 'Me ajuda com um pouco mais: "' + bruto.trim() + '" — pra quem, e como chega no cliente? '
+        + 'Por encomenda, no balcão, entrega em casa?';
+    },
+    servicos: function () {
+      return 'Me dá dois ou três exemplos do que você vende? Cada um vira um bloco na página, '
+        + 'então quanto mais concreto, menos a equipe precisa adivinhar.';
+    },
+    contatos_site: function () {
+      return 'Aqui eu preciso do contato em si — o telefone, o WhatsApp ou o e-mail que vai ficar '
+        + 'visível pro visitante usar.';
+    }
+  };
+
+  function responderDuvida(campo, bruto) {
+    var s = normalizar(bruto);
+    var a = campo.ajuda;
+    if (/(o que e|oq e|nao sei o que|nao entendi|que que e)/.test(s) && a.borda) {
+      return a.borda + ' ' + a.serve;
+    }
+    if (/(por que|pq|pra que|para que|preciso mesmo|obrigatorio)/.test(s)) {
+      return a.porque + (campo.obrigatorio ? '' : ' E esse aqui é opcional — dá pra pular.');
+    }
+    return a.serve + (a.borda ? ' ' + a.borda : '');
+  }
+
+  /* Comentário: curto, e null na maioria das vezes. Comente quando muda
+     alguma coisa — elogio depois de toda resposta vira mobília. */
+  function comentar(campo, bruto, contexto) {
+    var s = normalizar(bruto);
+    if (campo.chave === 'dominio') {
+      if (/^(ainda )?nao tenho/.test(s)) {
+        return 'Sem domínio ainda não trava nada — a JoinVix registra pra você. Anotei como pendente aqui.';
+      }
+      if (/^https?:|^www\./i.test(bruto.trim())) {
+        return 'Anotei sem o www. Pra gente dá no mesmo.';
+      }
+      return null;
+    }
+    if (campo.chave === 'ramo') {
+      if (/(padaria|restaurante|lanche|comida|confeitaria|bolo|pizza|roupa|loja|moda|salao|estetica|fotograf|arquitet|obra|reforma|marcenaria)/.test(s)) {
+        return 'Esse é um negócio que se vende pelo olho. Se você tiver fotos suas, guarda pra daqui a pouco — elas rendem bem mais que foto de banco.';
+      }
+      return null;
+    }
+    if (campo.chave === 'servicos') {
+      var itens = bruto.split(/\n|,|;| e /).filter(function (p) { return p.trim().length > 2; });
+      if (itens.length === 1) {
+        return 'Se tiver mais algum, dá pra acrescentar na revisão, no fim.';
+      }
+      return null;
+    }
+    if (campo.chave === 'redes_sociais') {
+      if (/@/.test(bruto) && !/\.(com|br|me)/.test(s)) {
+        return 'Anotei. Com o endereço completo do perfil o botão leva direto pro lugar certo, mas com o @ a gente acha.';
+      }
+      return null;
+    }
+    if (campo.chave === 'contatos_site' && contexto.whatsapp && bruto.replace(/\D/g, '').indexOf(contexto.whatsapp.replace(/\D/g, '')) === -1 && /\d{8,}/.test(bruto)) {
+      return 'Anotei um número diferente do seu contato com a equipe. É isso mesmo que você quer mostrar no site?';
+    }
+    return null;
+  }
+
+  /* =======================================================================
+     ESTADO — o roteiro é do PHP. Nada aqui é decidido pelo modelo.
+     ======================================================================= */
+  var CHAVE_RASCUNHO = 'lt-rascunho-v1';
+  var TOTAL = CAMPOS.length;            /* 15 */
+  var PASSOS = TOTAL + 1;               /* o envio é o passo 16 */
+
+  var estado = {
+    indice: 0,
+    respostas: {},
+    arquivos: {},
+    pendentes: {},
+    reperguntado: {},
+    variantes: {},
+    fase: 'conversa',
+    voltandoDaRevisao: false,
+    secoesAnunciadas: {},
+    enviando: false,
+    enviado: false,
+    ocupado: false
+  };
+
+  function campoAtual() { return CAMPOS[estado.indice]; }
+  function resolvido(campo) { return Object.prototype.hasOwnProperty.call(estado.respostas, campo.chave); }
+  function quantosResolvidos() { return CAMPOS.filter(resolvido).length; }
+  function tudoResolvido() { return quantosResolvidos() === TOTAL; }
+  function contexto() {
+    return {
+      whatsapp: estado.respostas.whatsapp ? estado.respostas.whatsapp.valor : null,
+      email: estado.respostas.email ? estado.respostas.email.valor : null,
+      empresa: estado.respostas.empresa ? estado.respostas.empresa.valor : null,
+      semImagens: estado.respostas.imagens_ia && estado.respostas.imagens_ia.valor === 'nao'
+    };
+  }
+  function pergunta(campo) {
+    if (estado.variantes[campo.chave] === undefined) {
+      estado.variantes[campo.chave] = Math.floor(Math.random() * campo.perguntas.length);
+    }
+    return campo.perguntas[estado.variantes[campo.chave]];
+  }
+
+  /* =======================================================================
+     PROGRESSO — conta campos resolvidos, nunca turnos de conversa.
+     ======================================================================= */
+  var barraMontada = false;
+  var contagemAnterior = 0;
+
+  function montarBarra() {
+    var barra = $('lt-barra');
+    barra.innerHTML = '';
+    [6, 6, 4].forEach(function (peso, i) {
+      var seg = criar('div', 'lt-segmento');
+      seg.style.flex = peso + ' 1 0';
+      seg.setAttribute('data-secao', i + 1);
+      seg.appendChild(criar('i'));
+      barra.appendChild(seg);
+    });
+    barraMontada = true;
+  }
+
+  function atualizarProgresso() {
+    if (!barraMontada) { montarBarra(); }
+    var porSecao = [0, 0, 0];
+    CAMPOS.forEach(function (c) { if (resolvido(c)) { porSecao[c.secao - 1]++; } });
+    var totais = [6, 6, 4];
+    var feitos = [porSecao[0], porSecao[1], porSecao[2] + (estado.enviado ? 1 : 0)];
+
+    Array.prototype.forEach.call($('lt-barra').children, function (seg, i) {
+      seg.querySelector('i').style.width = Math.min(1, feitos[i] / totais[i]) * 100 + '%';
+      seg.classList.toggle('lt-segmento--feito', feitos[i] >= totais[i]);
+    });
+
+    var n = quantosResolvidos();
+    $('lt-barra').setAttribute('aria-valuenow', n);
+    var etapa = estado.fase === 'conversa'
+      ? 'Etapa ' + campoAtual().secao + ' de 3'
+      : (estado.enviado ? 'Enviado' : 'Revisão');
+    contarAte(contagemAnterior, n, etapa);
+    contagemAnterior = n;
+  }
+
+  function contarAte(de, ate, etapa) {
+    var alvo = $('lt-contagem');
+    var escrever = function (v) { alvo.textContent = etapa + ' · ' + v + ' de ' + TOTAL; };
+    if (de === ate || reduzido()) { return escrever(ate); }
+    var inicio = performance.now();
+    (function passo(agora) {
+      var t = Math.min(1, (agora - inicio) / 420);
+      escrever(Math.round(de + (ate - de) * t));
+      if (t < 1) { requestAnimationFrame(passo); }
+    })(inicio);
+  }
+
+  /* =======================================================================
+     HISTÓRICO — uma linha por turno, a 60% de opacidade.
+     ======================================================================= */
+  function redesenharHistorico() {
+    var alvo = $('lt-historico');
+    var botao = $('lt-abrir');
+    alvo.innerHTML = '';
+    var quantos = 0;
+    CAMPOS.forEach(function (campo, i) {
+      if (i >= estado.indice && estado.fase === 'conversa') { return; }
+      if (!resolvido(campo)) { return; }
+      var r = estado.respostas[campo.chave];
+      var linha = criar('button', 'lt-passado');
+      linha.type = 'button';
+      linha.innerHTML = '<span class="lt-passado-texto"><b>' + escapar(campo.rotulo) + '</b> · '
+        + escapar(mostrar(campo, r) || '(pulado)') + '</span>'
+        + '<span class="lt-passado-acao">corrigir</span>';
+      linha.addEventListener('click', function () { voltarPara(i); });
+      alvo.appendChild(linha);
+      quantos++;
+    });
+
+    botao.hidden = quantos === 0 || estado.fase !== 'conversa';
+    botao.textContent = (estado.historicoAberto ? 'Esconder' : 'Ver') + ' as ' + quantos + ' respostas anteriores';
+    botao.setAttribute('aria-expanded', estado.historicoAberto ? 'true' : 'false');
+    alvo.hidden = !estado.historicoAberto || botao.hidden;
+  }
+
+  function mostrar(campo, r) {
+    if (!r) { return ''; }
+    if (campo.tipo === 'arquivo') {
+      var arqs = estado.arquivos[campo.chave] || [];
+      if (estado.pendentes.logo && campo.chave === 'logo') { return 'vai mandar depois'; }
+      if (!arqs.length) { return r.link ? r.link : ''; }
+      return arqs.map(function (a) { return a.nome; }).join(', ') + (r.link ? ' · ' + r.link : '');
+    }
+    if (campo.tipo === 'escolha') {
+      var op = campo.opcoes.filter(function (o) { return o.valor === r.valor; })[0];
+      return op ? op.texto : r.valor;
+    }
+    return r.valor;
+  }
+
+  /* =======================================================================
+     TELA — um movimento por evento.
+     ======================================================================= */
+  var palco = null, turno = null, area = null, perguntaEl = null;
+
+  /* A pergunta é o centro da tela e não sai dele: tudo que a LetícIA diz
+     entra acima dela, e a entrada fica logo abaixo. */
+  function prepararPalco() {
+    palco = $('lt-palco');
+    palco.innerHTML = '';
+    turno = criar('div', 'lt-turno lt-entra');
+    perguntaEl = criar('h2', 'lt-pergunta');
+    area = criar('div', 'lt-resposta');
+    turno.appendChild(perguntaEl);
+    palco.appendChild(turno);
+    palco.appendChild(area);
+  }
+
+  function acimaDaPergunta(el) { turno.insertBefore(el, perguntaEl); }
+
+  function falar(texto, classe) {
+    var p = criar('p', 'lt-fala' + (classe ? ' ' + classe : ''));
+    acimaDaPergunta(p);
+    return revelar(p, texto);
+  }
+
+  function pensar() {
+    var box = criar('div', 'lt-pensando',
+      '<i></i><i></i><i></i><span class="lt-pensando-rotulo">escrevendo…</span>');
+    box.setAttribute('aria-hidden', 'true');
+    acimaDaPergunta(box);
+    anunciar('escrevendo');
+    return function () { if (box.parentNode) { box.parentNode.removeChild(box); } };
+  }
+
+  function mostrarBalao(texto) {
+    var b = criar('div', 'lt-balao lt-sobe');
+    b.textContent = texto;
+    acimaDaPergunta(b);
+  }
+
+  function marcarConferido() {
+    var m = criar('p', 'lt-conferido', ICO.check + '<span>anotado</span>');
+    acimaDaPergunta(m);
+    setTimeout(function () {
+      if (!m.parentNode) { return; }
+      m.style.transition = 'opacity var(--lt-padrao) var(--lt-acelera)';
+      m.style.opacity = '0';
+      setTimeout(function () { if (m.parentNode) { m.parentNode.removeChild(m); } }, 240);
+    }, 1200);
+  }
+
+  /* =======================================================================
+     LETICIA_ROTEIRO — a máquina de estados. Duas tentativas e segue:
+     briefing que prende a pessoa num campo é pior que campo fraco.
+     ======================================================================= */
+  var Roteiro = {
+    consultar: function (campo, bruto) {
+      var tentativas = 0;
+      function tentar() {
+        tentativas++;
+        return Modelo.consultar(campo, bruto, contexto()).catch(function (erro) {
+          if (tentativas < 2 && erro instanceof SyntaxError) { return tentar(); }
+          registrar(campo.chave, erro.message);
+          return null;               /* avança sem comentário */
+        });
+      }
+      return tentar();
+    }
+  };
+
+  var registro = [];
+  function registrar(chave, motivo) { registro.push({ campo: chave, motivo: motivo, quando: Date.now() }); }
+
+  /* =======================================================================
+     IR PARA UM CAMPO
+     ======================================================================= */
+  function irParaCampo(i, opcoes) {
+    opcoes = opcoes || {};
+    estado.fase = 'conversa';
+    estado.indice = i;
+    $('lt-raiz').setAttribute('data-fase', 'conversa');
+    var campo = CAMPOS[i];
+
+    prepararPalco();
+    redesenharHistorico();
+    atualizarProgresso();
+
+    /* o comentário dito no campo anterior continua acima da nova pergunta:
+       chegar junto faz a pessoa ler os dois como um bloco só */
+    if (estado.ecoComentario) {
+      var eco = criar('p', 'lt-fala lt-fala--suave');
+      eco.textContent = estado.ecoComentario;
+      acimaDaPergunta(eco);
+      estado.ecoComentario = null;
+    }
+
+    var fila = Promise.resolve();
+    var textoPergunta = opcoes.textoPergunta || pergunta(campo);
+
+    if (campo.chave === 'contatos_site' && !opcoes.textoPergunta && !opcoes.digitando) {
+      var c = contexto();
+      if (c.whatsapp) {
+        textoPergunta = 'Posso publicar no site o WhatsApp ' + c.whatsapp
+          + (c.email ? ' e o e-mail ' + c.email : '') + '?';
+      }
+    }
+
+    if (ABERTURA_SECAO[campo.secao] && !estado.secoesAnunciadas[campo.secao] && !opcoes.reabrindo) {
+      estado.secoesAnunciadas[campo.secao] = true;
+      var aviso = criar('p', 'lt-secao-aviso');
+      acimaDaPergunta(aviso);
+      fila = fila.then(function () { return revelar(aviso, ABERTURA_SECAO[campo.secao]); })
+                 .then(function () { return espera(300); });
+    }
+
+    if (campo.chave === 'materiais' && contexto().semImagens) {
+      var extra = criar('p', 'lt-fala lt-fala--suave');
+      acimaDaPergunta(extra);
+      fila = fila.then(function () {
+        return revelar(extra, 'Como você preferiu não usar imagens de banco, o que entrar aqui é o que o site vai ter de imagem. Sem nada, ele fica sem foto nenhuma.');
+      }).then(function () { return espera(300); });
+    }
+
+    if (opcoes.reabrindo) {
+      perguntaEl.textContent = textoPergunta;
+      anunciar(textoPergunta);
+      desenharArea(campo, opcoes);
+      return Promise.resolve();
+    }
+    return fila.then(function () { return revelar(perguntaEl, textoPergunta); })
+               .then(function () { desenharArea(campo, opcoes); });
+  }
+
+  /* =======================================================================
+     A ÁREA DE RESPOSTA
+     ======================================================================= */
+  function desenharArea(campo, opcoes) {
+    opcoes = opcoes || {};
+    area.innerHTML = '';
+    area.classList.add('lt-entra-curto');
+    if (campo.tipo === 'escolha') { return areaEscolha(campo, opcoes); }
+    if (campo.chave === 'contatos_site' && contexto().whatsapp && !opcoes.digitando && !resolvido(campo)) {
+      return areaConfirmaContato(campo);
+    }
+    if (campo.tipo === 'arquivo') { return areaArquivo(campo, opcoes); }
+    return areaTexto(campo, opcoes);
+  }
+
+  function linhaDeAcoes(campo, extras) {
+    var linha = criar('div', 'lt-linha-abaixo');
+    var acoes = criar('div', 'lt-acoes');
+
+    if (estado.indice > 0 || estado.voltandoDaRevisao) {
+      var voltar = criar('button', 'lt-btn', 'Voltar');
+      voltar.type = 'button';
+      voltar.addEventListener('click', function () {
+        if (estado.voltandoDaRevisao) { estado.voltandoDaRevisao = false; return irParaRevisao(); }
+        voltarPara(Math.max(0, estado.indice - 1));
+      });
+      acoes.appendChild(voltar);
+    }
+    if (!campo.obrigatorio) {
+      var pular = criar('button', 'lt-btn', 'Pular');
+      pular.type = 'button';
+      pular.addEventListener('click', function () { pularCampo(campo); });
+      acoes.appendChild(pular);
+    }
+    (extras || []).forEach(function (b) { acoes.appendChild(b); });
+
+    linha.appendChild(acoes);
+    return linha;
+  }
+
+  /* o mesmo "por que perguntamos" da pílula, para os campos sem digitação */
+  function botaoPorque(campo) {
+    var b = criar('button', 'lt-btn', 'Por que perguntamos?');
+    b.type = 'button';
+    var painel = null;
+    b.addEventListener('click', function () {
+      if (painel) {
+        painel.parentNode.removeChild(painel);
+        painel = null;
+        return;
+      }
+      painel = criar('div', 'lt-porque lt-entra-curto');
+      painel.textContent = campo.ajuda.porque + ' ' + campo.ajuda.serve;
+      area.appendChild(painel);
+      anunciar(painel.textContent);
+    });
+    return b;
+  }
+
+  function areaTexto(campo, opcoes) {
+    var caixa = criar('div', 'lt-campo');
+    var ta = document.createElement('textarea');
+    ta.id = 'lt-entrada';
+    ta.rows = 1;
+    ta.maxLength = 1200;
+    ta.value = opcoes.valor || '';
+    ta.placeholder = campo.dica || '';
+    ta.setAttribute('aria-label', campo.rotulo);
+
+    var botao = criar('button', 'lt-enviar', ICO.enviar);
+    botao.type = 'button';
+    botao.disabled = !ta.value.trim();
+    botao.setAttribute('aria-label', 'Enviar resposta');
+
+    /* "por que perguntamos" sai da base, não do modelo: custa zero de cota */
+    var ajuda = criar('button', 'lt-redondo', '?');
+    ajuda.type = 'button';
+    ajuda.id = 'lt-porque-btn';
+    ajuda.setAttribute('aria-label', 'Por que perguntamos isso?');
+    ajuda.setAttribute('aria-expanded', 'false');
+    ajuda.setAttribute('aria-controls', 'lt-porque');
+
+    caixa.appendChild(ajuda);
+    caixa.appendChild(ta);
+    caixa.appendChild(botao);
+    area.appendChild(caixa);
+
+    var porque = criar('div', 'lt-porque');
+    porque.id = 'lt-porque';
+    porque.hidden = true;
+    porque.textContent = campo.ajuda.porque + ' ' + campo.ajuda.serve;
+    area.appendChild(porque);
+
+    ajuda.addEventListener('click', function () {
+      var abrindo = porque.hidden;
+      porque.hidden = !abrindo;
+      ajuda.classList.toggle('lt-redondo--marcado', abrindo);
+      ajuda.setAttribute('aria-expanded', abrindo ? 'true' : 'false');
+      if (abrindo) {
+        porque.classList.remove('lt-entra-curto');
+        void porque.offsetWidth;
+        porque.classList.add('lt-entra-curto');
+        anunciar(porque.textContent);
+      }
+    });
+
+    var erro = criar('p', 'lt-erro');
+    erro.id = 'lt-erro';
+    erro.hidden = true;
+    ta.setAttribute('aria-describedby', 'lt-erro');
+
+    var linha = linhaDeAcoes(campo);
+    var contador = criar('span', 'lt-contador');
+    if (estado.indice === 0) {
+      linha.appendChild(criar('span', 'lt-dica', 'Enter envia · Shift+Enter quebra linha'));
+    } else {
+      linha.appendChild(contador);
+    }
+    area.appendChild(erro);
+    area.appendChild(linha);
+
+    /* zerar a altura antes de medir: com 'auto' o scrollHeight pode vir do
+       estado anterior enquanto a fonte ainda não assentou */
+    function crescer() {
+      ta.style.height = '0px';
+      ta.style.height = Math.min(Math.max(ta.scrollHeight, 40), 9 * 16) + 'px';
+    }
+    function mudou() {
+      botao.disabled = !ta.value.trim();
+      crescer();
+      var limite = ta.maxLength;
+      contador.textContent = ta.value.length > limite * 0.8 ? ta.value.length + ' / ' + limite : '';
+    }
+    ta.addEventListener('input', mudou);
+    ta.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); disparar(); }
+    });
+    botao.addEventListener('click', disparar);
+
+    function disparar() {
+      var bruto = ta.value.trim();
+      if (!bruto) { return; }
+      var v = Validacao.checar(campo, bruto);
+      if (!v.ok) { return mostrarErro(caixa, erro, v.erro, ta); }
+      erro.hidden = true;
+      caixa.classList.remove('lt-campo--erro');
+      responder(campo, bruto, v);
+    }
+
+    mudou();
+    requestAnimationFrame(crescer);
+    if (document.fonts && document.fonts.ready) { document.fonts.ready.then(crescer); }
+    setTimeout(function () { ta.focus(); }, 20);
+  }
+
+  function mostrarErro(caixa, erro, texto, ta) {
+    erro.textContent = texto;
+    erro.hidden = false;
+    erro.classList.remove('lt-entra-curto');
+    void erro.offsetWidth;
+    erro.classList.add('lt-entra-curto');
+    caixa.classList.add('lt-campo--erro');
+    caixa.classList.remove('lt-treme');
+    void caixa.offsetWidth;
+    caixa.classList.add('lt-treme');
+    anunciar(texto);
+    if (ta) { ta.focus(); }
+  }
+
+  function areaEscolha(campo) {
+    var box = criar('div', 'lt-escolhas');
+    var atual = estado.respostas[campo.chave];
+    campo.opcoes.forEach(function (op) {
+      var b = criar('button', 'lt-escolha');
+      b.type = 'button';
+      b.textContent = op.texto;
+      if (atual && atual.valor === op.valor) { b.classList.add('lt-escolha--marcada'); }
+      b.addEventListener('click', function () {
+        if (estado.ocupado) { return; }
+        estado.ocupado = true;
+        box.querySelectorAll('.lt-escolha').forEach(function (o) { o.disabled = true; });
+        mostrarBalao(op.texto);
+        gravar(campo, { valor: op.valor, bruto: op.texto });
+        setTimeout(function () { estado.ocupado = false; seguir(); }, 300);
+      });
+      box.appendChild(b);
+    });
+    area.appendChild(box);
+    area.appendChild(linhaDeAcoes(campo, [botaoPorque(campo)]));
+    setTimeout(function () { var p = box.querySelector('button'); if (p) { p.focus(); } }, 20);
+  }
+
+  /* Pedir de novo o que a pessoa acabou de digitar é o que faz um
+     formulário parecer burro. Aqui a resposta já vem sugerida. */
+  function areaConfirmaContato(campo) {
+    var c = contexto();
+    var sugerido = 'WhatsApp ' + c.whatsapp + (c.email ? ' · E-mail ' + c.email : '');
+    var box = criar('div', 'lt-escolhas');
+
+    var sim = criar('button', 'lt-escolha', 'Pode publicar');
+    sim.type = 'button';
+    sim.addEventListener('click', function () {
+      if (estado.ocupado) { return; }
+      estado.ocupado = true;
+      mostrarBalao('Pode publicar');
+      gravar(campo, { valor: sugerido, bruto: 'Pode publicar' });
+      setTimeout(function () { estado.ocupado = false; seguir(); }, 300);
+    });
+
+    var muda = criar('button', 'lt-escolha', 'Quero mudar');
+    muda.type = 'button';
+    muda.addEventListener('click', function () {
+      desenharArea(campo, { digitando: true });
+    });
+
+    box.appendChild(sim);
+    box.appendChild(muda);
+    area.appendChild(box);
+    area.appendChild(criar('p', 'lt-ajuda', 'Esse é o contato que o visitante do site vai ver — não o seu contato com a equipe.'));
+    area.appendChild(linhaDeAcoes(campo));
+    setTimeout(function () { sim.focus(); }, 20);
+  }
+
+  /* =======================================================================
+     ARQUIVOS — pedaços de 4 MB, progresso real, validação no fim
+     ======================================================================= */
+  var PEDACO = 4 * 1024 * 1024;
+
+  function areaArquivo(campo) {
+    if (!estado.arquivos[campo.chave]) { estado.arquivos[campo.chave] = []; }
+    var lista = criar('div', 'lt-arquivos');
+
+    var zona = criar('div', 'lt-solta');
+    zona.innerHTML = '<p class="lt-solta-titulo">Arraste o arquivo aqui ou toque para escolher</p>'
+      + '<p class="lt-solta-sub">' + campo.aceitaTexto + (campo.multiplo ? ' · pode mandar mais de um' : '') + '</p>';
+
+    var entrada = document.createElement('input');
+    entrada.type = 'file';
+    entrada.id = 'lt-arquivo-' + campo.chave;
+    entrada.multiple = !!campo.multiplo;
+    entrada.className = 'lt-invisivel';
+    entrada.addEventListener('change', function () { receber(entrada.files); entrada.value = ''; });
+
+    var escolher = criar('button', 'lt-btn-primario', 'Escolher arquivo');
+    escolher.type = 'button';
+    escolher.addEventListener('click', function () { entrada.click(); });
+    zona.appendChild(escolher);
+
+    ['dragenter', 'dragover'].forEach(function (ev) {
+      zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.add('lt-solta--arrastando'); });
+    });
+    ['dragleave', 'drop'].forEach(function (ev) {
+      zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.remove('lt-solta--arrastando'); });
+    });
+    zona.addEventListener('drop', function (e) { if (e.dataTransfer) { receber(e.dataTransfer.files); } });
+
+    area.appendChild(zona);
+    area.appendChild(entrada);
+    area.appendChild(lista);
+
+    var campoLink = null;
+    if (campo.temLink) {
+      var caixaLink = criar('div', 'lt-campo');
+      campoLink = document.createElement('textarea');
+      campoLink.rows = 1;
+      campoLink.id = 'lt-link';
+      campoLink.placeholder = 'Ou cole o endereço de uma pasta (Drive, WeTransfer)';
+      campoLink.setAttribute('aria-label', 'Endereço de uma pasta com os materiais');
+      caixaLink.appendChild(campoLink);
+      area.appendChild(caixaLink);
+    }
+
+    var continuar = criar('button', 'lt-btn-primario', campo.obrigatorio ? 'Continuar' : 'Continuar');
+    continuar.type = 'button';
+    continuar.style.alignSelf = 'center';
+    continuar.addEventListener('click', function () { concluirArquivos(campo, campoLink); });
+
+    var extras = [];
+    if (campo.chave === 'logo') {
+      var depois = criar('button', 'lt-btn', 'Não estou com o arquivo agora');
+      depois.type = 'button';
+      depois.addEventListener('click', function () {
+        estado.pendentes.logo = true;
+        mostrarBalao('Não estou com o arquivo agora');
+        gravar(campo, { valor: '', pendente: true, bruto: 'vai mandar depois' });
+        falar('Sem problema. Marquei a logomarca como pendente e a equipe te manda um endereço pra anexar depois. Só lembra que as 72 horas começam a contar quando ela chegar.')
+          .then(function () { return espera(300); })
+          .then(seguir);
+      });
+      extras.push(depois);
+    }
+    extras.push(botaoPorque(campo));
+
+    var linha = linhaDeAcoes(campo, extras);
+    area.appendChild(linha);
+    area.appendChild(continuar);
+
+    function atualizarBotao() {
+      var arqs = estado.arquivos[campo.chave];
+      var prontos = arqs.filter(function (a) { return a.pronto && !a.erro; }).length;
+      var subindo = arqs.some(function (a) { return !a.pronto && !a.erro; });
+      continuar.disabled = subindo || (campo.obrigatorio && prontos === 0 && !estado.pendentes.logo);
+      continuar.textContent = subindo ? 'Enviando…' : 'Continuar';
+    }
+
+    function receber(arquivos) {
+      Array.prototype.forEach.call(arquivos, function (f) {
+        var ext = (f.name.split('.').pop() || '').toLowerCase();
+        var item = {
+          id: 'a' + Math.random().toString(36).slice(2, 9),
+          nome: f.name, tamanho: f.size, ext: ext,
+          progresso: 0, pedaco: 0,
+          pedacos: Math.max(1, Math.ceil(f.size / PEDACO)),
+          pronto: false, erro: null, aviso: null, url: null
+        };
+        if (campo.aceita.indexOf(ext) === -1) {
+          item.erro = 'Esse tipo de arquivo eu não consigo aceitar aqui. Aceito ' + campo.aceitaTexto + '.';
+          item.pronto = true;
+        } else if (/^(png|jpg|jpeg|webp)$/.test(ext) && window.URL && window.URL.createObjectURL) {
+          item.url = URL.createObjectURL(f);
+          if (ext === 'png' && campo.chave === 'logo') { medirPng(item); }
+        }
+        if (!campo.multiplo) { estado.arquivos[campo.chave] = []; }
+        estado.arquivos[campo.chave].push(item);
+        desenharLista();
+        if (!item.erro) { subir(item); }
+      });
+      atualizarBotao();
+    }
+
+    function medirPng(item) {
+      var img = new Image();
+      img.onload = function () {
+        if (img.naturalWidth < 500) {
+          item.aviso = 'Essa imagem tem ' + img.naturalWidth + ' px de largura. Aceito assim mesmo, mas no topo do site ela pode sair borrada.';
+          desenharLista();
+        }
+      };
+      img.src = item.url;
+    }
+
+    function subir(item) {
+      var intervalo = Math.max(45, 1800 / item.pedacos);
+      var t = setInterval(function () {
+        item.pedaco++;
+        item.progresso = item.pedaco / item.pedacos;
+        if (item.pedaco >= item.pedacos) {
+          clearInterval(t);
+          item.pronto = true;
+        }
+        desenharLista();
+        atualizarBotao();
+      }, intervalo);
+    }
+
+    function desenharLista() {
+      lista.innerHTML = '';
+      estado.arquivos[campo.chave].forEach(function (item) {
+        var cartao = criar('div', 'lt-arquivo' + (item.erro ? ' lt-arquivo--ruim' : ''));
+
+        var mini = criar('div', 'lt-arquivo-mini', item.url ? '' : ICO.arquivo);
+        if (item.url) {
+          var img = document.createElement('img');
+          img.src = item.url;
+          img.alt = '';
+          mini.appendChild(img);
+        }
+
+        var meio = criar('div');
+        meio.appendChild(criar('p', 'lt-arquivo-nome', escapar(item.nome)));
+        var sub = criar('p', 'lt-arquivo-sub' + (item.erro || item.aviso ? ' lt-arquivo-sub--ruim' : ''));
+        if (item.erro) {
+          sub.textContent = item.erro;
+        } else if (!item.pronto) {
+          sub.textContent = tamanhoLegivel(item.tamanho) + ' · pedaço ' + item.pedaco + ' de ' + item.pedacos;
+        } else {
+          sub.textContent = item.aviso ? item.aviso : tamanhoLegivel(item.tamanho) + ' · enviado';
+        }
+        meio.appendChild(sub);
+
+        if (!item.erro && !item.pronto) {
+          var barra = criar('div', 'lt-arquivo-barra', '<i></i>');
+          barra.firstChild.style.width = (item.progresso * 100) + '%';
+          meio.appendChild(barra);
+        }
+
+        var tirar = criar('button', 'lt-remover', ICO.remover);
+        tirar.type = 'button';
+        tirar.setAttribute('aria-label', 'Remover ' + item.nome);
+        tirar.addEventListener('click', function () {
+          estado.arquivos[campo.chave] = estado.arquivos[campo.chave].filter(function (a) { return a.id !== item.id; });
+          desenharLista();
+          atualizarBotao();
+        });
+
+        cartao.appendChild(mini);
+        cartao.appendChild(meio);
+        cartao.appendChild(tirar);
+        lista.appendChild(cartao);
+      });
+    }
+
+    desenharLista();
+    atualizarBotao();
+    setTimeout(function () { escolher.focus(); }, 20);
+  }
+
+  function concluirArquivos(campo, campoLink) {
+    var arqs = (estado.arquivos[campo.chave] || []).filter(function (a) { return a.pronto && !a.erro; });
+    estado.arquivos[campo.chave] = arqs;
+    var link = campoLink ? campoLink.value.trim() : '';
+    if (!arqs.length && !link && !campo.obrigatorio) { return pularCampo(campo); }
+    gravar(campo, {
+      valor: arqs.map(function (a) { return a.nome; }).join(', '),
+      link: link || null,
+      bruto: ''
+    });
+    seguir();
+  }
+
+  /* =======================================================================
+     O CICLO DE UMA RESPOSTA
+     ======================================================================= */
+  function responder(campo, bruto, v) {
+    if (estado.ocupado) { return; }
+    estado.ocupado = true;
+    area.innerHTML = '';
+    mostrarBalao(bruto);
+
+    var precisaModelo = campo.comenta || pareceDuvida(bruto);
+
+    espera(220).then(function () {
+      if (!precisaModelo) { return null; }
+      var fim = pensar();
+      return Roteiro.consultar(campo, bruto).then(function (r) { fim(); return r; });
+    }).then(function (res) {
+
+      if (res && (res.tipo === 'duvida' || res.tipo === 'fora_de_escopo')) {
+        estado.duvidas = (estado.duvidas || 0) + 1;
+        return falar(res.resposta_duvida)
+          .then(function () { return espera(300); })
+          .then(function () { return falar(retomada(campo), 'lt-fala--suave'); })
+          .then(function () {
+            estado.ocupado = false;
+            desenharArea(campo, { reabrindo: true, digitando: true });
+          });
+      }
+
+      if (res && res.tipo === 'resposta' && res.suficiente === false && !estado.reperguntado[campo.chave]) {
+        estado.reperguntado[campo.chave] = true;   /* no máximo uma repergunta por campo */
+        return falar(res.repergunta).then(function () {
+          estado.ocupado = false;
+          desenharArea(campo, { reabrindo: true, digitando: true, valor: bruto });
+        });
+      }
+
+      var valor = v.valor;
+      if (res && res.valor_limpo && ['texto'].indexOf(campo.tipo) !== -1) { valor = res.valor_limpo; }
+      gravar(campo, { valor: valor, bruto: bruto });
+
+      if (campo.chave === 'dominio') {
+        if (v.pendente) { estado.pendentes.dominio = true; } else { delete estado.pendentes.dominio; }
+      }
+      if (v.conferido) { marcarConferido(); }
+
+      var fim = Promise.resolve();
+      if (res && res.comentario) {
+        fim = espera(240)
+          .then(function () { return falar(res.comentario); })
+          .then(function () { estado.ecoComentario = res.comentario; return espera(300); });
+      }
+      return fim.then(function () { estado.ocupado = false; seguir(); });
+    });
+  }
+
+  function retomada(campo) {
+    var outras = campo.perguntas.filter(function (p) { return p !== pergunta(campo); });
+    return outras.length ? outras[0] : pergunta(campo);
+  }
+
+  function gravar(campo, dados) {
+    estado.respostas[campo.chave] = dados;
+    salvarRascunho();
+  }
+
+  function pularCampo(campo) {
+    if (estado.ocupado) { return; }
+    gravar(campo, { valor: '', pulado: true, bruto: '' });
+    seguir();
+  }
+
+  function voltarPara(i) {
+    if (estado.ocupado) { return; }
+    if (estado.fase === 'revisao') { estado.voltandoDaRevisao = true; }
+    var anterior = estado.respostas[CAMPOS[i].chave] || {};
+    irParaCampo(i, { reabrindo: true, digitando: true, valor: anterior.bruto || anterior.valor || '' });
+  }
+
+  /* Quem decide o próximo campo é daqui, nunca o modelo. */
+  function seguir() {
+    salvarRascunho();
+    var destino = function () {
+      if (estado.voltandoDaRevisao) { estado.voltandoDaRevisao = false; return irParaRevisao(); }
+      var prox = estado.indice + 1;
+      while (prox < TOTAL && resolvido(CAMPOS[prox])) { prox++; }
+      if (prox >= TOTAL) { return irParaRevisao(); }
+      irParaCampo(prox);
+    };
+    return sumirPalco().then(destino);
+  }
+
+  /* o turno sai, depois o próximo entra: nunca os dois ao mesmo tempo */
+  function sumirPalco() {
+    if (reduzido() || !palco) { return Promise.resolve(); }
+    palco.style.transition = 'opacity var(--lt-padrao) var(--lt-acelera)';
+    palco.style.opacity = '0';
+    return espera(220).then(function () {
+      palco.style.transition = '';
+      palco.style.opacity = '';
+    });
+  }
+
+  /* =======================================================================
+     REVISÃO — ninguém deveria enviar 15 campos sem ver os 15 juntos uma vez
+     ======================================================================= */
+  function irParaRevisao() {
+    estado.fase = 'revisao';
+    estado.voltandoDaRevisao = false;
+    $('lt-raiz').setAttribute('data-fase', 'revisao');
+    $('lt-historico').innerHTML = '';
+    $('lt-historico').hidden = true;
+    $('lt-abrir').hidden = true;
+    palco = $('lt-palco');
+    palco.innerHTML = '';
+    atualizarProgresso();
+
+    var bloco = criar('div', 'lt-revisao');
+    var cab = criar('div');
+    cab.appendChild(criar('h2', 'lt-titulo', 'Confere antes de enviar'));
+    cab.appendChild(criar('p', 'lt-fala lt-fala--suave',
+      'É o que vai chegar na equipe. Qualquer coisa aqui você ainda corrige.'));
+    cab.style.display = 'flex';
+    cab.style.flexDirection = 'column';
+    cab.style.gap = 'var(--lt-e2)';
+    bloco.appendChild(cab);
+
+    pendencias().forEach(function (p) {
+      bloco.appendChild(criar('div', 'lt-pendencia', ICO.alerta + '<p>' + p + '</p>'));
+    });
+
+    var lista = criar('div', 'lt-lista');
+    CAMPOS.forEach(function (campo, i) {
+      var r = estado.respostas[campo.chave];
+      var item = criar('div', 'lt-item');
+      if (i < 12 && !reduzido()) {
+        item.classList.add('lt-entra-curto');
+        item.style.animationDelay = (i * 40) + 'ms';
+      }
+      item.appendChild(criar('p', 'lt-item-rotulo', escapar(campo.rotulo)));
+
+      var texto = mostrar(campo, r);
+      var valor = criar('p', 'lt-item-valor' + (texto ? '' : ' lt-item-valor--vazio'));
+      valor.textContent = texto || (campo.obrigatorio ? '—' : 'não informado');
+      item.appendChild(valor);
+
+      var editar = criar('button', 'lt-editar', 'Editar');
+      editar.type = 'button';
+      editar.setAttribute('aria-label', 'Editar ' + campo.rotulo);
+      editar.addEventListener('click', function () { voltarPara(i); });
+      item.appendChild(editar);
+
+      lista.appendChild(item);
+    });
+    bloco.appendChild(lista);
+
+    var aceite = criar('div', 'lt-aceite');
+    var caixa = document.createElement('input');
+    caixa.type = 'checkbox';
+    caixa.id = 'lt-consentimento';
+    var rotulo = document.createElement('label');
+    rotulo.setAttribute('for', 'lt-consentimento');
+    rotulo.textContent = TEXTO_CONSENTIMENTO;
+    aceite.appendChild(caixa);
+    aceite.appendChild(rotulo);
+    bloco.appendChild(aceite);
+
+    var rodape = criar('div');
+    rodape.style.display = 'flex';
+    rodape.style.flexDirection = 'column';
+    rodape.style.gap = 'var(--lt-e3)';
+    rodape.style.alignItems = 'flex-start';
+
+    var enviar = criar('button', 'lt-btn-primario', 'Enviar briefing');
+    enviar.type = 'button';
+    enviar.disabled = true;
+    caixa.addEventListener('change', function () { enviar.disabled = !caixa.checked; });
+    enviar.addEventListener('click', function () { enviarBriefing(enviar); });
+    rodape.appendChild(enviar);
+    rodape.appendChild(criar('p', 'lt-ajuda',
+      'O envio só está concluído quando aparecer a mensagem de recebido nesta tela.'));
+    bloco.appendChild(rodape);
+
+    palco.appendChild(bloco);
+    window.scrollTo({ top: 0, behavior: reduzido() ? 'auto' : 'smooth' });
+    anunciar('Revisão do briefing. 15 respostas para conferir antes de enviar.');
+  }
+
+  function pendencias() {
+    var lista = [];
+    if (estado.pendentes.logo) {
+      lista.push('A logomarca ficou pendente. As 72 horas começam a contar quando ela chegar — a equipe te manda um endereço pra anexar.');
+    }
+    if (estado.pendentes.dominio) {
+      lista.push('O domínio ainda não existe. A JoinVix registra pra você, e isso leva um tempo que não está dentro das 72 horas.');
+    }
+    return lista;
+  }
+
+  /* =======================================================================
+     ENVIO — clicar duas vezes grava um briefing, não dois
+     ======================================================================= */
+  function enviarBriefing(botao) {
+    if (estado.enviando || estado.enviado) { return; }
+    estado.enviando = true;
+    botao.disabled = true;
+    botao.textContent = 'Enviando…';
+
+    espera(900).then(function () {
+      estado.enviando = false;
+      if ($('lt-rede').checked) { return telaFalha(); }
+      estado.enviado = true;
+      limparRascunho();
+      telaSucesso();
+    });
+  }
+
+  function telaSucesso() {
+    $('lt-raiz').setAttribute('data-fase', 'fim');
+    palco.innerHTML = '';
+    atualizarProgresso();
+
+    var bloco = criar('div', 'lt-final');
+    bloco.innerHTML = ICO.selo;
+    var c = contexto();
+
+    bloco.appendChild(criar('h2', 'lt-titulo', 'Briefing recebido'));
+    var p1 = criar('p', 'lt-fala');
+    bloco.appendChild(p1);
+
+    var passos = criar('div', 'lt-proximos');
+    var linhas = [
+      'A equipe lê o seu briefing e monta o site com o material que você mandou.'
+        + (c.email ? ' Uma cópia foi para ' + c.email + '.' : ''),
+      'Se faltar alguma coisa, eles te chamam' + (c.whatsapp ? ' no ' + c.whatsapp + '.' : '.'),
+      'As 72 horas começam a contar quando o material completo estiver com a equipe.'
+    ];
+    pendencias().forEach(function (p) { linhas.push(p); });
+    linhas.forEach(function (t) {
+      passos.appendChild(criar('div', 'lt-proximo', '<i></i><p>' + t + '</p>'));
+    });
+    bloco.appendChild(passos);
+    palco.appendChild(bloco);
+
+    revelar(p1, 'Chegou aqui, ' + (estado.respostas.responsavel ? primeiroNome(estado.respostas.responsavel.valor) : 'obrigada') + '. Está tudo com a equipe.');
+  }
+
+  function primeiroNome(nome) { return (nome || '').split(/\s+/)[0]; }
+
+  function telaFalha() {
+    $('lt-raiz').setAttribute('data-fase', 'fim');
+    palco.innerHTML = '';
+    var bloco = criar('div', 'lt-final');
+    bloco.appendChild(criar('h2', 'lt-titulo', 'O envio não completou'));
+    bloco.appendChild(criar('p', 'lt-fala',
+      'Suas respostas continuam aqui, nenhuma se perdeu. Foi a conexão com o nosso servidor que falhou.'));
+
+    var linha = criar('div');
+    linha.style.display = 'flex';
+    linha.style.flexWrap = 'wrap';
+    linha.style.gap = 'var(--lt-e3)';
+    linha.style.alignItems = 'center';
+
+    var denovo = criar('button', 'lt-btn-primario', 'Tentar de novo');
+    denovo.type = 'button';
+    denovo.addEventListener('click', function () { enviarBriefing(denovo); });
+    linha.appendChild(denovo);
+    bloco.appendChild(linha);
+
+    bloco.appendChild(criar('p', 'lt-saida',
+      'Se não passar desta vez, o formulário de sempre continua no ar: '
+      + '<a href="https://formularios.joinvix.com.br/site-express/" target="_blank" rel="noopener">formulários da JoinVix</a>.'));
+
+    palco.appendChild(bloco);
+    anunciar('O envio não completou. Suas respostas continuam salvas.');
+  }
+
+  /* =======================================================================
+     RASCUNHO — abas fecham. Um briefing leva de 10 a 15 minutos.
+     ======================================================================= */
+  function salvarRascunho() {
+    try {
+      localStorage.setItem(CHAVE_RASCUNHO, JSON.stringify({
+        respostas: estado.respostas,
+        indice: estado.indice,
+        variantes: estado.variantes,
+        secoesAnunciadas: estado.secoesAnunciadas,
+        pendentes: estado.pendentes,
+        reperguntado: estado.reperguntado,
+        arquivos: nomesDeArquivos(),
+        quando: Date.now()
+      }));
+    } catch (e) { /* aba privada, cota cheia: o briefing continua */ }
+  }
+
+  function nomesDeArquivos() {
+    var fora = {};
+    Object.keys(estado.arquivos).forEach(function (k) {
+      fora[k] = estado.arquivos[k].map(function (a) {
+        return { id: a.id, nome: a.nome, tamanho: a.tamanho, ext: a.ext, pronto: true, pedaco: a.pedacos, pedacos: a.pedacos, progresso: 1 };
+      });
+    });
+    return fora;
+  }
+
+  function lerRascunho() {
+    try {
+      var cru = localStorage.getItem(CHAVE_RASCUNHO);
+      if (!cru) { return null; }
+      var d = JSON.parse(cru);
+      if (!d || !d.quando || Date.now() - d.quando > 7 * 24 * 3600 * 1000) { return null; }
+      if (!d.respostas || !Object.keys(d.respostas).length) { return null; }
+      return d;
+    } catch (e) { return null; }
+  }
+
+  function limparRascunho() {
+    try { localStorage.removeItem(CHAVE_RASCUNHO); } catch (e) { /* segue */ }
+  }
+
+  function ofertarRetomada(d) {
+    var nome = d.respostas.empresa ? d.respostas.empresa.valor : null;
+    var feitos = Object.keys(d.respostas).length;
+    var campo = CAMPOS[Math.min(d.indice, TOTAL - 1)];
+
+    var barra = criar('div', 'lt-retomada');
+    barra.appendChild(criar('p', null,
+      'Retomando o briefing ' + (nome ? 'da ' + escapar(nome) : 'em andamento')
+      + ', na etapa ' + campo.secao + '. ' + feitos + ' de ' + TOTAL + ' respondidos.'));
+
+    var seguir = criar('button', null, 'Continuar');
+    seguir.type = 'button';
+    seguir.addEventListener('click', function () { retomar(d); });
+
+    var zero = criar('button', null, 'Não é você? Começar do zero');
+    zero.type = 'button';
+    zero.addEventListener('click', function () { limparRascunho(); $('lt-retomada').innerHTML = ''; });
+
+    barra.appendChild(seguir);
+    barra.appendChild(zero);
+    $('lt-retomada').appendChild(barra);
+  }
+
+  function retomar(d) {
+    estado.respostas = d.respostas || {};
+    estado.variantes = d.variantes || {};
+    estado.secoesAnunciadas = d.secoesAnunciadas || {};
+    estado.pendentes = d.pendentes || {};
+    estado.reperguntado = d.reperguntado || {};
+    estado.arquivos = d.arquivos || {};
+    $('lt-retomada').innerHTML = '';
+    contagemAnterior = 0;
+    var i = 0;
+    while (i < TOTAL && resolvido(CAMPOS[i])) { i++; }
+    if (i >= TOTAL) { return irParaRevisao(); }
+    irParaCampo(i);
+  }
+
+  /* =======================================================================
+     PAINEL DO PROTÓTIPO
+     ======================================================================= */
+  $('lt-abrir').addEventListener('click', function () {
+    estado.historicoAberto = !estado.historicoAberto;
+    redesenharHistorico();
+    if (estado.historicoAberto) {
+      var primeira = $('lt-historico').querySelector('.lt-passado');
+      if (primeira) { primeira.focus(); }
+    } else {
+      $('lt-abrir').focus();
+    }
+  });
+
+  $('lt-api').addEventListener('change', function () { Modelo.ligado = this.checked; });
+  $('lt-json').addEventListener('change', function () { Modelo.quebrarJson = this.checked; });
+  $('lt-zerar').addEventListener('click', function () {
+    limparRascunho();
+    location.reload();
+  });
+
+  /* =======================================================================
+     CELULAR — o teclado não pode cobrir o campo
+     ======================================================================= */
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function () {
+      var foco = document.activeElement;
+      if (foco && /TEXTAREA|INPUT/.test(foco.tagName)) {
+        setTimeout(function () { foco.scrollIntoView({ block: 'center', behavior: 'auto' }); }, 60);
+      }
+    });
+  }
+
+  /* =======================================================================
+     ARRANQUE — cabeçalho e barra em 220 ms; a pergunta 120 ms depois.
+     Nada mais se mexe.
+     ======================================================================= */
+  function iniciar() {
+    montarBarra();
+    atualizarProgresso();
+    document.querySelector('.lt-topo').classList.add('lt-entra-curto');
+    var rascunho = lerRascunho();
+    if (rascunho) { ofertarRetomada(rascunho); }
+    setTimeout(function () { irParaCampo(0); }, reduzido() ? 0 : 340);
+  }
+
+  iniciar();
+})();
+</script>

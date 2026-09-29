@@ -1,0 +1,12 @@
+# O Git guarda tudo com LF e devolve o final de linha nativo de cada máquina.
+#
+# O que não pode é um arquivo ficar com final diferente dos outros: dois casos
+# de casos-css.php procuram no leticia.css um trecho escrito dentro do próprio
+# teste, quebra de linha inclusive. Com tudo igual, passa em Windows e em
+# Linux; com um arquivo destoando, falha nos dois. Já aconteceu uma vez, por
+# causa de um `sed -i`.
+* text=auto
+
+*.png binary
+*.jpg binary
+*.zip binary

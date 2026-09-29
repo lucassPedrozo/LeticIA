@@ -1,0 +1,102 @@
+/*
+ * O painel da LetícIA no wp-admin.
+ *
+ * Usa as classes do próprio WordPress (widefat, form-table, nav-tab) para o
+ * grosso, e só acrescenta o que ele não tem: cartões, avisos, barras e
+ * etiquetas. Tudo sob .leticia-admin, para não vazar em outra tela do admin.
+ */
+
+.leticia-admin {
+  --lt-bom:     #0e9f6e;
+  --lt-atento:  #b45309;
+  --lt-ruim:    #b42318;
+  --lt-neutro:  #646970;
+  --lt-borda:   #dcdcde;
+  --lt-fundo:   #fff;
+  --lt-acento:  #1f5eff;
+  max-width: 1180px;
+}
+
+.leticia-admin .leticia-titulo { margin-bottom: 8px; }
+.leticia-admin .leticia-abas { margin-bottom: 16px; }
+.leticia-admin h2 { margin-top: 28px; }
+.leticia-admin .leticia-tranquilo { color: var(--lt-neutro); margin: 12px 0 4px; }
+
+/* ---- avisos ------------------------------------------------------------ */
+.leticia-admin .leticia-atencao { display: grid; gap: 8px; margin: 12px 0 8px; }
+.leticia-admin .leticia-aviso {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
+  background: var(--lt-fundo);
+  border: 1px solid var(--lt-borda); border-left-width: 4px;
+  padding: 10px 14px; margin: 8px 0;
+}
+.leticia-admin .leticia-aviso strong { font-weight: 600; }
+.leticia-admin .leticia-aviso span { color: #3c434a; }
+.leticia-admin .leticia-aviso.e-bom    { border-left-color: var(--lt-bom); }
+.leticia-admin .leticia-aviso.e-atento { border-left-color: var(--lt-atento); }
+.leticia-admin .leticia-aviso.e-ruim   { border-left-color: var(--lt-ruim); }
+.leticia-admin .leticia-aviso .leticia-copiar { margin-top: 6px; flex-basis: 100%; }
+
+/* ---- cartões ----------------------------------------------------------- */
+.leticia-admin .leticia-cartoes {
+  display: grid; gap: 12px; margin: 16px 0;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.leticia-admin .leticia-cartao {
+  background: var(--lt-fundo);
+  border: 1px solid var(--lt-borda); border-top-width: 3px; border-radius: 4px;
+  padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 4px;
+  min-width: 0;
+}
+.leticia-admin .leticia-cartao.e-bom    { border-top-color: var(--lt-bom); }
+.leticia-admin .leticia-cartao.e-atento { border-top-color: var(--lt-atento); }
+.leticia-admin .leticia-cartao.e-ruim   { border-top-color: var(--lt-ruim); }
+.leticia-admin .leticia-cartao .rotulo { font-size: 12px; color: var(--lt-neutro); text-transform: uppercase; letter-spacing: .04em; }
+.leticia-admin .leticia-cartao .valor  { font-size: 26px; line-height: 1.2; font-weight: 600; font-variant-numeric: tabular-nums; }
+.leticia-admin .leticia-cartao .valor.menor { font-size: 17px; }
+.leticia-admin .leticia-cartao .nota   { font-size: 13px; color: #3c434a; overflow-wrap: anywhere; }
+
+.leticia-admin .leticia-barra { display: block; height: 6px; background: #f0f0f1; border-radius: 3px; margin: 4px 0 6px; overflow: hidden; }
+.leticia-admin .leticia-barra span { display: block; height: 100%; background: var(--lt-acento); }
+
+/* ---- onde param / dúvidas ---------------------------------------------- */
+.leticia-admin .leticia-colunas { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+.leticia-admin .leticia-bloco h2 { margin-top: 20px; }
+.leticia-admin .leticia-barras { margin: 12px 0 0; }
+.leticia-admin .leticia-barras li { display: grid; grid-template-columns: 180px 1fr 36px; align-items: center; gap: 10px; margin: 0 0 8px; }
+.leticia-admin .leticia-barras .nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.leticia-admin .leticia-barras .trilho { height: 10px; background: #f0f0f1; border-radius: 5px; overflow: hidden; }
+.leticia-admin .leticia-barras .trilho span { display: block; height: 100%; background: var(--lt-atento); border-radius: 5px; }
+.leticia-admin .leticia-barras .n { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---- tabelas ----------------------------------------------------------- */
+.leticia-admin .leticia-tabela { margin-top: 8px; }
+.leticia-admin .leticia-tabela td { vertical-align: middle; overflow-wrap: anywhere; }
+.leticia-admin .leticia-respostas th { width: 220px; font-weight: 600; }
+.leticia-admin .leticia-respostas td { vertical-align: top; }
+.leticia-admin .leticia-vazio { color: var(--lt-neutro); font-style: italic; }
+.leticia-admin .leticia-inline { display: inline; margin: 0; }
+.leticia-admin .subsubsub { float: none; margin: 0 0 4px; }
+
+.leticia-admin .leticia-etiqueta {
+  display: inline-block; font-size: 12px; line-height: 1.6;
+  padding: 0 8px; border-radius: 10px; margin: 1px 2px 1px 0;
+  background: #f0f0f1; color: var(--lt-neutro); white-space: nowrap;
+}
+.leticia-admin .leticia-etiqueta.e-bom    { background: #e7f6ef; color: #0a6b4b; }
+.leticia-admin .leticia-etiqueta.e-atento { background: #fcf0e3; color: #8a4108; }
+.leticia-admin .leticia-etiqueta.e-ruim   { background: #fdeceb; color: var(--lt-ruim); }
+
+.leticia-admin .leticia-detalhe-titulo { font-size: 22px; margin: 16px 0 4px; }
+
+/* ---- configuração ------------------------------------------------------ */
+.leticia-admin .leticia-travado { opacity: .7; }
+.leticia-admin .leticia-testar { margin: 8px 0 24px; }
+.leticia-admin .leticia-campos { max-width: 860px; margin-bottom: 16px; }
+.leticia-admin .leticia-campos td { vertical-align: middle; }
+
+@media (max-width: 782px) {
+  .leticia-admin .leticia-barras li { grid-template-columns: 120px 1fr 32px; }
+  .leticia-admin .leticia-respostas th { width: auto; }
+}

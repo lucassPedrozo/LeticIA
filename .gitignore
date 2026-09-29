@@ -1,0 +1,26 @@
+# A chave da API e o resto da configuração local. Só o .env.example vai para o
+# repositório — ele mostra o formato e não tem valor nenhum dentro.
+.env
+.env.*
+!.env.example
+
+# O que o empacotar.py gera.
+dist/
+
+# O que o servidor local grava: briefings de teste, e-mails, uploads e a cópia
+# minificada. Tudo isso é dado de quem preencheu, e não vai para o repositório.
+local/dados/
+
+# Preferências pessoais do editor.
+.claude/settings.local.json
+.vscode/
+.idea/
+
+__pycache__/
+*.pyc
+*.zip
+
+.DS_Store
+Thumbs.db
+
+prototipo/_parte*.html
